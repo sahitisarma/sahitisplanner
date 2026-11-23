@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sahiti’s Planner</title>
   <meta name="description" content="Sahiti’s personal planner: handwriting, calendar, lists and voice notes.">
-  <meta name="theme-color" content="#6F9A74">
+  <meta name="theme-color" content="#FDF9F5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,5 +29,18 @@
     })();
   </script>
   <script type="module" src="js/app.js"></script>
+  <script>
+    // Safety net: if the app has not started after a few seconds (usually old cached files),
+    // clear the offline copy once and reload so the newest files load.
+    setTimeout(function () {
+      if (window.__spBooted) return;
+      var tried = false; try { tried = sessionStorage.getItem('sp-heal') === '1'; sessionStorage.setItem('sp-heal', '1'); } catch (e) {}
+      if (tried) return;
+      var jobs = [];
+      if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+      if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+      Promise.all(jobs).catch(function () {}).then(function () { location.replace(location.pathname + '?fresh=' + Date.now() + location.hash); });
+    }, 5000);
+  </script>
 </body>
 </html>
