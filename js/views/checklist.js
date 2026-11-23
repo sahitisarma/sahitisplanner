@@ -2,7 +2,7 @@
 // Write anywhere; your writing stays exactly where you put it.
 // Tap a box to check off that line. Unchecked lines from earlier days show up
 // on today's page (same writing, never a copy) until you check them.
-import { h } from '../ui.js';
+import { h, menu } from '../ui.js';
 import { InkSurface, makeZoomable, thumbnail } from '../ink.js';
 import * as store from '../store.js';
 import * as D from '../dates.js';
@@ -25,11 +25,19 @@ export function usedRows(rec) {
 function toggle(inkId, r, el) {
   const rec = store.get('ink', inkId) || { id: inkId, strokes: [] };
   const checked = { ...(rec.checked || {}) };
-  if (checked[r]) delete checked[r]; else checked[r] = D.todayKey();
+  const sub = rec.sub || {};
+  const on = !checked[r];
+  // Checking a main task also checks the subtasks right under it.
+  const rows = [r];
+  if (!sub[r]) for (let k = r + 1; sub[k]; k++) rows.push(k);
+  for (const k of rows) { if (on) checked[k] = checked[k] || D.todayKey(); else delete checked[k]; }
   store.put('ink', { id: inkId, checked }, { quiet: true });
-  el?.classList.toggle('on', !!checked[r]);
-  el?.closest('.cl-host')?.querySelector(`.cl-done[data-r="${r}"]`)?.classList.toggle('on', !!checked[r]);
-  return !!checked[r];
+  const host = el?.closest('.cl-host');
+  for (const k of rows) {
+    (k === r ? el : host?.querySelector(`.cl-box[data-r="${k}"]`))?.classList.toggle('on', on);
+    host?.querySelector(`.cl-done[data-r="${k}"]`)?.classList.toggle('on', on);
+  }
+  return on;
 }
 
 // A full checklist page (zoomable). opts: height (css), minRows, compact
@@ -45,21 +53,46 @@ export function checklistPage(inkId, { height = 'auto', minRows = 12, label = 'C
   const drawMarks = (surf) => {
     const cur = store.get('ink', inkId);
     const checked = cur?.checked || {};
+    const sub = cur?.sub || {};
     const rows = Math.ceil((surf.logicalH - TOP) / ROW);
     marks.replaceChildren();
     for (let r = 0; r < rows; r++) {
+      const isSub = !!sub[r];
       const box = h('button', {
-        class: `cl-box ${checked[r] ? 'on' : ''}`, 'aria-label': `Check line ${r + 1}`,
-        style: { top: `calc(var(--u) * ${TOP + r * ROW + ROW / 2 - 15})` },
-        onclick: (e) => { e.stopPropagation(); toggle(inkId, r, e.currentTarget); },
+        class: `cl-box ${isSub ? 'sub' : ''} ${checked[r] ? 'on' : ''}`, 'data-r': r,
+        'aria-label': `${isSub ? 'Subtask' : 'Task'} on line ${r + 1}. Hold for subtask options`,
+        style: { top: `calc(var(--u) * ${TOP + r * ROW + ROW / 2 - (isSub ? 12 : 15)})` },
+        // The Pencil never sends a "click" on iPad (the page blocks it so writing
+        // doesn't scroll), so pen taps are handled on pointerup instead.
+        onclick: (e) => { e.stopPropagation(); if (held || penTapped) { held = false; penTapped = false; return; } toggle(inkId, r, e.currentTarget); },
+        oncontextmenu: (e) => { e.preventDefault(); subMenu(e.currentTarget, r); },
       });
-      const done = h('div', { class: `cl-done ${checked[r] ? 'on' : ''}`, 'data-r': r, style: { top: `calc(var(--u) * ${TOP + r * ROW})`, height: `calc(var(--u) * ${ROW})` } });
+      // Press and hold a box to turn that line into a subtask (or back).
+      let timer = null, held = false, penTapped = false;
+      box.addEventListener('pointerdown', (e) => { e.stopPropagation(); held = false; timer = setTimeout(() => { held = true; subMenu(box, r); }, 450); });
+      box.addEventListener('pointerup', (e) => {
+        clearTimeout(timer);
+        if (e.pointerType === 'pen' && !held) { e.stopPropagation(); penTapped = true; toggle(inkId, r, box); setTimeout(() => { penTapped = false; }, 400); }
+      });
+      ['pointerleave', 'pointercancel'].forEach((ev) => box.addEventListener(ev, () => clearTimeout(timer)));
+      const done = h('div', { class: `cl-done ${isSub ? 'sub' : ''} ${checked[r] ? 'on' : ''}`, 'data-r': r, style: { top: `calc(var(--u) * ${TOP + r * ROW})`, height: `calc(var(--u) * ${ROW})` } });
       marks.append(box, done);
     }
   };
 
+  let surfRef = null;
+  const subMenu = (anchor, r) => {
+    const cur = store.get('ink', inkId) || { id: inkId, strokes: [] };
+    const sub = { ...(cur.sub || {}) };
+    const isSub = !!sub[r];
+    menu(anchor, [
+      isSub ? { label: 'Make it a main task', run: () => { delete sub[r]; store.put('ink', { id: inkId, sub }, { quiet: true }); drawMarks(surfRef); } }
+            : { label: 'Make it a subtask', run: () => { sub[r] = true; store.put('ink', { id: inkId, sub }, { quiet: true }); drawMarks(surfRef); } },
+    ].filter(Boolean));
+  };
+
   queueMicrotask(() => {
-    const surf = new InkSurface(host, {
+    const surf = surfRef = new InkSurface(host, {
       strokes: rec?.strokes || [],
       logicalH: Math.max(rec?.h || 0, TOP + ROW * minRows + 10),
       grow: true, minH: TOP + ROW * minRows + 10,
@@ -97,8 +130,10 @@ export function carriedLines(prefix, day, { lookback = 30 } = {}) {
     h('div', { class: 'carried-h' }, 'From earlier days'),
     out.map(({ id, r, d, rec }) => {
       const strokes = rec.strokes.filter((s) => rowOfStroke(s) === r).map((s) => ({ ...s, pts: s.pts.map((v, k) => (k % 3 === 1 ? v - (TOP + r * ROW) : v)) }));
-      const line = h('div', { class: 'carried-line' },
-        h('button', { class: 'cl-box static', 'aria-label': 'Check off', onclick: (e) => { const on = toggle(id, r, e.currentTarget); line.classList.toggle('done', on); } }),
+      const line = h('div', { class: `carried-line ${rec.sub?.[r] ? 'sub' : ''}` },
+        h('button', { class: 'cl-box static', 'aria-label': 'Check off',
+          onpointerup: (e) => { if (e.pointerType === 'pen') { e.currentTarget.dataset.pen = '1'; const on = toggle(id, r, e.currentTarget); line.classList.toggle('done', on); } },
+          onclick: (e) => { if (e.currentTarget.dataset.pen) { delete e.currentTarget.dataset.pen; return; } const on = toggle(id, r, e.currentTarget); line.classList.toggle('done', on); } }),
         h('div', { class: 'carried-ink' }),
         h('span', { class: 'carried-from' }, D.relLabel(d)));
       queueMicrotask(() => {
@@ -117,7 +152,7 @@ export function lineThumbs(inkId, widthPx = 360) {
   return usedRows(rec).map((r) => {
     const strokes = rec.strokes.filter((s) => rowOfStroke(s) === r).map((s) => ({ ...s, pts: s.pts.map((v, k) => (k % 3 === 1 ? v - (TOP + r * ROW) : v)) }));
     const done = !!rec.checked?.[r];
-    return h('div', { class: `ag-line ${done ? 'done' : ''}` },
+    return h('div', { class: `ag-line ${done ? 'done' : ''} ${rec.sub?.[r] ? 'sub' : ''}` },
       h('span', { class: `cl-box static ${done ? 'on' : ''}` }),
       h('div', { class: 'carried-ink' }, thumbnail(strokes, widthPx, 1000, ROW)));
   });

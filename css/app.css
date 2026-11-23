@@ -1137,3 +1137,8 @@ input:focus, select:focus, textarea:focus { box-shadow: none; outline: 2px solid
 .settings-card label { font-size: 18px !important; color: var(--ink) !important; text-transform: none !important; }
 .settings-card label select, .settings-card label input { font-size: 16px; margin-top: 6px; }
 .settings-card .palette span { font-size: 18px !important; }
+/* Subtasks: a smaller box tucked inside the writing area */
+.cl-box.sub { left: calc(var(--u, 1px) * 84); width: calc(var(--u, 1px) * 24); height: calc(var(--u, 1px) * 24); }
+.cl-done.sub { left: calc(var(--u, 1px) * 116); }
+.cl-box { -webkit-touch-callout: none; user-select: none; }
+.carried-line.sub, .ag-line.sub { padding-left: 28px; }
