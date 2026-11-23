@@ -1,6 +1,6 @@
 // Offline support: the planner opens even without a connection.
 // Bump VERSION when you publish changes so iPads pick up the new files.
-const VERSION = 'sp-v8';
+const VERSION = 'sp-v9';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css', './css/fonts.css',
   './js/app.js', './js/store.js', './js/model.js', './js/dates.js', './js/ui.js', './js/ink.js', './js/dock.js',
@@ -12,6 +12,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)));
 });
 self.addEventListener('activate', (e) => {
@@ -35,7 +36,8 @@ self.addEventListener('fetch', (e) => {
   }
   if (url.origin !== location.origin) return; // Google APIs go straight to the network
   // App files: network first (so updates arrive), cache as fallback (offline)
-  e.respondWith(fetch(e.request).then((res) => {
+  // cache: 'no-cache' asks GitHub every time, so a just-pushed file is never skipped.
+  e.respondWith(fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => {
     if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(e.request, copy)); }
     return res;
   }).catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match('./index.html'))));

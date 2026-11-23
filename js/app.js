@@ -54,6 +54,7 @@ async function boot() {
   if (localStorage.getItem('sp-focus') === '1') document.documentElement.classList.add('focus');
   wireStoreEvents();
   render();
+  window.__spBooted = true;
   renderStatus();
   keyboard();
   await sync.start();

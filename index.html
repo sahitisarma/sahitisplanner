@@ -36,10 +36,18 @@
       if (window.__spBooted) return;
       var tried = false; try { tried = sessionStorage.getItem('sp-heal') === '1'; sessionStorage.setItem('sp-heal', '1'); } catch (e) {}
       if (tried) return;
-      var jobs = [];
-      if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
-      if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
-      Promise.all(jobs).catch(function () {}).then(function () { location.replace(location.pathname + '?fresh=' + Date.now() + location.hash); });
+      // Old copies sit in the browser cache. The offline helper (sw.js) always asks GitHub
+      // for fresh files, so start it, let it take over this page, then reload.
+      var done = function () { location.replace(location.pathname + '?fresh=' + Date.now() + location.hash); };
+      if (!navigator.serviceWorker) return done();
+      var clear = window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve();
+      clear.catch(function () {}).then(function () { return navigator.serviceWorker.register('./sw.js'); })
+        .then(function (reg) { return reg.update().catch(function () {}).then(function () { return navigator.serviceWorker.ready; }); })
+        .then(function () {
+          if (navigator.serviceWorker.controller) return done();
+          navigator.serviceWorker.addEventListener('controllerchange', done);
+          setTimeout(done, 3000);
+        }).catch(done);
     }, 5000);
   </script>
 </body>
