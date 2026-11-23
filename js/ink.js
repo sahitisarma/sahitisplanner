@@ -138,6 +138,9 @@ export class InkSurface {
     this.strokes = clone(opts.strokes || []);
     this.logicalH = this.opts.logicalH;
     if (this.opts.grow) this.logicalH = Math.max(this.opts.minH, this.contentBottom() + 160);
+    // Whiteboards can also grow sideways: the page is logicalW units wide.
+    this.logicalW = this.opts.logicalW || LOGICAL_W;
+    if (this.opts.growX) { const b = bbox(this.strokes); if (b) this.logicalW = Math.max(this.logicalW, b.x + b.w + 400); }
     host.classList.add('ink-host');
     if (this.opts.label) host.setAttribute('aria-label', this.opts.label);
     this.canvas = document.createElement('canvas');
@@ -172,7 +175,7 @@ export class InkSurface {
   resize() {
     const w = this.host.clientWidth;
     if (!w) return;
-    this.scale = w / LOGICAL_W;
+    this.scale = w / this.logicalW;
     this.host.style.setProperty('--u', `${this.scale}px`);
     let hPx;
     if (this.opts.mode === 'aspect') {
@@ -294,15 +297,18 @@ export class InkSurface {
       }
     }
     this.drawLive();
-    if (c.stroke && this.opts.grow) this.maybeGrow(c.stroke.pts[c.stroke.pts.length - 2]);
+    if (c.stroke && (this.opts.grow || this.opts.growX)) this.maybeGrow(c.stroke.pts[c.stroke.pts.length - 2], c.stroke.pts[c.stroke.pts.length - 3]);
   }
 
-  maybeGrow(y) {
-    if (y > this.logicalH - 80) {
-      this.logicalH += 300;
-      this.resize();
-      this.drawLive();
+  maybeGrow(y, x = 0) {
+    let grew = false;
+    if (this.opts.grow && y > this.logicalH - 80) { this.logicalH += this.opts.growX ? 600 : 300; grew = true; }
+    if (this.opts.growX && x > this.logicalW - 120) {
+      this.logicalW += 800;
+      this.opts.onGrowX?.(this.logicalW); // the page gets wider; ink keeps its size
+      grew = true;
     }
+    if (grew) { this.resize(); this.drawLive(); }
   }
 
   drawLive() {
@@ -586,7 +592,7 @@ export async function recognize(strokes) {
 // viewport: the scrolling box. host: the ink surface inside it.
 // While pinching we scale with a fast CSS transform; when fingers lift we
 // re-render at the new size so ink stays crisp. The Pencil keeps writing normally.
-export function makeZoomable(viewport, host, { min = 1, max = 3, onZoom } = {}) {
+export function makeZoomable(viewport, host, { min = 1, max = 3, onZoom, factor = () => 1 } = {}) {
   let scale = 1;
   let pinch = null;
   viewport.classList.add('zoom-viewport');
@@ -598,7 +604,7 @@ export function makeZoomable(viewport, host, { min = 1, max = 3, onZoom } = {}) 
     const px = (viewport.scrollLeft + cx - r.left) / scale;
     const py = (viewport.scrollTop + cy - r.top) / scale;
     scale = s;
-    host.style.width = `${s * 100}%`;
+    host.style.width = `${s * factor() * 100}%`;
     host.style.transform = '';
     // after the ResizeObserver re-renders, keep the pinch point under the fingers
     requestAnimationFrame(() => {
@@ -644,6 +650,7 @@ export function makeZoomable(viewport, host, { min = 1, max = 3, onZoom } = {}) 
   }, { passive: false });
   return {
     get scale() { return scale; },
+    refresh() { host.style.width = `${scale * factor() * 100}%`; },
     set(s) { const r = viewport.getBoundingClientRect(); apply(Math.min(max, Math.max(min, s)), r.left + r.width / 2, r.top + 40); },
   };
 }

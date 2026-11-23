@@ -1022,3 +1022,108 @@ input:focus, select:focus, textarea:focus { box-shadow: none; outline: 2px solid
 /* The tab you're on is bold */
 .tab { font-weight: 400; }
 .tab.on { font-weight: 700; }
+/* Arrows sit right beside the month they change */
+.cal-title-row { display: flex; align-items: center; gap: 2px; margin-right: auto; min-width: 0; }
+.cal-title-row .cal-title { margin: 0 4px; }
+/* Nothing may push the page wider than the screen */
+#app { grid-template-columns: minmax(0, 1fr); }
+#topbar, #main { min-width: 0; }
+#toolbar-host { min-width: 0; overflow: hidden; }
+#toolbar-host .dock { max-width: 100%; overflow-x: auto; flex: 0 1 auto; }
+@media (max-width: 1280px) {
+  .logo { width: auto; font-size: 28px; }
+  .top-right { width: auto; }
+  .status { width: 92px; }
+  #toolbar-host .dock { gap: 8px; }
+}
+@media (max-width: 1050px) { .logo { display: none; } }
+/* Smaller screens / iPad portrait: a more compact toolbar so nothing is cut off */
+@media (max-width: 1100px) {
+  #toolbar-host .dock { gap: 6px; padding: 3px 6px; }
+  .dock-btn, .dock-btn.tool.on, .dock-btn.capture { min-width: 36px; width: 36px; height: 36px; }
+  .size-dot { width: 28px; height: 36px; }
+  .dock-group.colors { gap: 6px; }
+  .color-dot { width: 22px; height: 22px; }
+  .dock-group.colors .color-dot:nth-child(n+4) { display: none; }
+}
+@media (max-width: 820px) {
+  .dock-group.sizes .size-dot:nth-child(2n) { display: none; }
+}
+@media (max-width: 1440px) {
+  .logo { width: auto; font-size: 30px; }
+  .top-right { width: auto; }
+  .status { width: 110px; }
+  #toolbar-host .dock { gap: 8px; }
+}
+@media (max-width: 1240px) {
+  #toolbar-host .dock { gap: 6px; padding: 3px 6px; }
+  .dock-btn, .dock-btn.tool.on, .dock-btn.capture { min-width: 36px; width: 36px; height: 36px; }
+  .size-dot { width: 28px; height: 36px; }
+  .dock-group.colors { gap: 6px; }
+  .color-dot { width: 22px; height: 22px; }
+  .dock-group.colors .color-dot:nth-child(n+4) { display: none; }
+  .logo { font-size: 26px; }
+}
+/* Calendar header: in narrower spots the title gets its own line, and Today, the view switch,
+   Calendars and New event all sit together on one even line underneath */
+.cal-head { row-gap: 8px; column-gap: 8px; }
+.cal-head .chip, .cal-head .btn.sm { min-height: 36px; height: 36px; padding: 0 14px; }
+.cal.compact .cal-title-row { flex-basis: 100%; margin-right: 0; }
+.cal.compact .cal-head > .btn.primary { margin-left: auto; }
+@container (max-width: 760px) {
+  .cal-title-row { flex-basis: 100%; margin-right: 0; }
+  .cal-head > .btn.primary { margin-left: auto; }
+}
+/* Day overview (tap a date) */
+.agenda2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
+@media (max-width: 700px) { .agenda2 { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+.ag-events { display: flex; flex-direction: column; gap: 2px; }
+.ag-ev { display: grid; grid-template-columns: 64px 10px minmax(0, 1fr); align-items: center; gap: 10px; text-align: left; min-height: 44px; padding: 6px 8px; margin: 0 -8px; border-radius: 6px; }
+.ag-ev:hover { background: var(--fill); }
+.ag-time { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.ag-dot { width: 8px; height: 8px; border-radius: 50%; }
+.ag-title { font-size: 16px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-list { margin-bottom: 18px; }
+.ag-list-h { font-size: 14px; font-weight: 500; color: var(--muted); margin: 0 0 6px; }
+.ag-lines { display: flex; flex-direction: column; gap: 4px; }
+.ag-line { display: flex; align-items: center; gap: 12px; }
+.ag-line.done .carried-ink { filter: grayscale(1); opacity: 1; }
+.day-sheet .empty { margin: 4px 0; }
+/* Calendars + New event stay together on the right */
+.cal-head > .btn.primary { margin-left: 0 !important; }
+.cal-head > .cal-cals { margin-left: auto; }
+.cal:not(.compact) .cal-head > .cal-cals { margin-left: 0; }
+@container (min-width: 761px) { .cal-head > .cal-cals { margin-left: 0; } }
+/* Today sits on the month line, at the right end */
+.cal-title-row { flex: 1 1 auto; }
+.cal-title-row .cal-today { margin-left: auto; }
+.cal:not(.compact) .cal-title-row .cal-today { margin-right: 6px; }
+/* Notes: links, outline, whiteboard */
+.note-new-col { display: flex; flex-direction: column; gap: 6px; }
+.note-links { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 12px; }
+.note-links-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; font-size: 14px; }
+.note-links-row .lbl { color: var(--muted); font-weight: 300; min-width: 84px; }
+.note-link { background: none; border: 0; padding: 0; color: var(--accent, #C0283A); font: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: pointer; }
+.typed-wrap { display: grid; grid-template-columns: minmax(0,1fr) 200px; gap: 24px; align-items: start; }
+.typed-wrap:has(.note-outline:empty) { grid-template-columns: minmax(0,1fr); }
+.note-outline:empty { display: none; }
+.note-outline { position: sticky; top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.outline-h { font-family: var(--font-display); font-size: 15px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
+.outline-item { background: none; border: 0; padding: 4px 0; text-align: left; font: inherit; font-size: 14px; font-weight: 300; color: var(--ink); cursor: pointer; }
+.outline-item.sub { padding-left: 14px; color: var(--muted); }
+.note-text h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 14px 0 4px; }
+.note-text h3 { font-weight: 500; font-size: 17px; margin: 10px 0 2px; }
+.note-text ul, .note-text ol { padding-left: 22px; margin: 4px 0; }
+.note-text blockquote { margin: 0 0 0 22px; }
+.text-toolbar { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0; }
+.board-wrap .zoom-viewport { overflow: auto; }
+.board-page { background-color: var(--card); }
+@media (max-width: 820px) { .typed-wrap { grid-template-columns: minmax(0,1fr); } .note-outline { position: static; } }
+/* Dashboard panels: tighter gap under the panel title */
+.panel > .panel-head { padding-bottom: 0; }
+.panel .cal-head { padding-top: 0 !important; margin-top: 0 !important; }
+/* Sections list: every row has the same columns */
+.sec-row { display: grid; grid-template-columns: 28px minmax(0,1fr) 36px 36px 64px 36px; align-items: center; gap: 10px; flex-wrap: nowrap; }
+.sec-row input { min-width: 0; }
+.sec-row .chip { justify-self: stretch; text-align: center; }
+.linkish { background: none; border: 0; padding: 4px 0; font: inherit; font-size: 14px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

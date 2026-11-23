@@ -7,7 +7,7 @@ import * as model from '../model.js';
 import * as store from '../store.js';
 import { inkPad, zoomPage } from './inkpad.js';
 import { itemList } from './items.js';
-import { checklistPage, carriedLines } from './checklist.js';
+import { checklistPage, carriedLines, lineThumbs } from './checklist.js';
 import { bus } from '../bus.js';
 import * as sync from '../sync.js';
 
@@ -24,15 +24,16 @@ export function renderCalendar(host, { compact = false } = {}) {
     calState.day = view === 'month' ? D.addMonths(calState.day, n) : D.addDays(calState.day, n * (view === 'week' ? 7 : 1));
     bus.rerender();
   };
+  const unit = view === 'month' ? 'month' : view === 'week' ? 'week' : 'day';
   wrap.append(h('div', { class: 'cal-head' },
-    h('h2', { class: 'cal-title' }, h('button', { class: 'cal-title-btn', 'aria-label': 'Choose a month', onclick: (e) => monthPicker(e.currentTarget) }, title, icon('down', 18))),
-    h('div', { class: 'cal-nav' },
-      h('button', { class: 'icon-btn', 'aria-label': 'Previous', onclick: () => step(-1) }, icon('left')),
-      h('button', { class: 'chip', onclick: () => { calState.day = D.todayKey(); bus.rerender(); } }, 'Today'),
-      h('button', { class: 'icon-btn', 'aria-label': 'Next', onclick: () => step(1) }, icon('right'))),
+    h('div', { class: 'cal-title-row' },
+      h('button', { class: 'icon-btn', 'aria-label': `Previous ${unit}`, title: `Previous ${unit}`, onclick: () => step(-1) }, icon('left')),
+      h('h2', { class: 'cal-title' }, h('button', { class: 'cal-title-btn', 'aria-label': 'Choose a month', onclick: (e) => monthPicker(e.currentTarget) }, title, icon('down', 18))),
+      h('button', { class: 'icon-btn', 'aria-label': `Next ${unit}`, title: `Next ${unit}`, onclick: () => step(1) }, icon('right')),
+      h('button', { class: 'chip cal-today', onclick: () => { calState.day = D.todayKey(); bus.rerender(); } }, 'Today')),
     h('div', { class: 'seg', role: 'tablist' }, ['month', 'week', 'day'].map((v) =>
       h('button', { class: view === v ? 'on' : '', role: 'tab', 'aria-selected': String(view === v), onclick: () => { calState.view = v; saveCal(); bus.rerender(); } }, v[0].toUpperCase() + v.slice(1)))),
-    h('button', { class: 'chip', title: 'Show or hide calendars', onclick: (e) => calendarsMenu(e.currentTarget) }, 'Calendars'),
+    h('button', { class: 'chip cal-cals', title: 'Show or hide calendars', onclick: (e) => calendarsMenu(e.currentTarget) }, 'Calendars'),
     h('button', { class: 'btn primary sm', onclick: () => openEventEditor(null, { day: calState.day }) }, 'New event')));
 
   if (view === 'month') wrap.append(monthView(calState.day));
@@ -109,34 +110,55 @@ function monthView(k) {
 // Tap a date: see that day's events, tasks, errands and notes.
 export function openDaySheet(day) {
   const body = h('div', { class: 'day-sheet' });
-  const draw = () => {
-    fill(body, 
-      h('div', { class: 'row gap' },
-        h('button', { class: 'btn primary sm', onclick: () => { s.close(); openEventEditor(null, { day }); } }, 'New event'),
-        h('button', { class: 'btn sm', onclick: () => { s.close(); calState.day = day; calState.view = 'day'; bus.navigate('calendar'); } }, 'Open day page')),
-      dayAgenda(day));
-  };
-  const s = sheet(D.fmtFull(day), body, { wide: true });
+  const draw = () => fill(body, dayAgenda(day));
+  const s = sheet(D.fmtFull(day), body, {
+    wide: true,
+    actions: [
+      { label: 'Open day page', run: () => { calState.day = day; calState.view = 'day'; saveCal(); bus.navigate('calendar'); } },
+      { label: 'New event', kind: 'primary', run: () => { setTimeout(() => openEventEditor(null, { day }), 0); } },
+    ],
+  });
   draw();
   const off = store.on((ev) => { if (ev.type === 'change' && !ev.quiet && body.isConnected) draw(); else if (!body.isConnected) off(); });
 }
 
 function dayAgenda(day) {
   const evs = E.occurrencesOn(day);
-  const lists = model.sections().filter((s) => ['todos', 'errands', 'tobuy', 'list'].includes(s.type));
+  const lists = model.sections().filter((x) => ['todos', 'errands', 'tobuy', 'list'].includes(x.type));
   const notes = store.all('notes').filter((n) => n.date === day);
   const voices = store.all('voice').filter((v) => v.link?.date === day);
-  return h('div', { class: 'agenda' },
-    h('h3', { class: 'agenda-h' }, 'Schedule'),
-    evs.length ? h('div', { class: 'agenda-events' }, evs.map((o) => eventChip(o))) : h('p', { class: 'empty' }, 'No events'),
-    lists.map((sec) => {
-      const items = model.itemsForDay(sec.id, day);
-      return h('div', {}, h('h3', { class: 'agenda-h', style: { '--c': sec.color } }, sec.name),
-        itemList(items, { day, empty: '', showStore: sec.type === 'tobuy' }));
-    }),
-    notes.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Notes'), notes.map((n) => h('button', { class: 'link-row', onclick: () => bus.navigate(`notes/${n.id}`) }, n.title || 'Untitled note'))) : null,
-    voices.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Voice notes'), voices.map((v) => h('button', { class: 'link-row', onclick: () => bus.navigate('voice') }, v.transcript?.slice(0, 60) || 'Recording'))) : null,
-  );
+
+  const schedule = h('section', { class: 'ag-col' },
+    h('h3', { class: 'block-h' }, 'Schedule'),
+    evs.length
+      ? h('div', { class: 'ag-events' }, evs.map((o) => h('button', { class: 'ag-ev', onclick: () => openEventEditor(o) },
+        h('span', { class: 'ag-time' }, o.ev.allDay ? 'All day' : D.fmtTime(o.start)),
+        h('span', { class: 'ag-dot', style: { background: E.eventColor(o.ev) } }),
+        h('span', { class: 'ag-title' }, o.ev.summary))))
+      : h('p', { class: 'empty' }, 'No events'));
+
+  // Only show lists that actually have something for this day
+  const listBlocks = lists.map((sec) => {
+    const typed = model.itemsForDay(sec.id, day);
+    const lines = lineThumbs(`day:${day}:${sec.id}`);
+    if (!typed.length && !lines.length) return null;
+    return h('div', { class: 'ag-list' },
+      h('h4', { class: 'ag-list-h' }, sec.name),
+      typed.length ? itemList(typed, { day }) : null,
+      lines.length ? h('div', { class: 'ag-lines' }, lines) : null);
+  }).filter(Boolean);
+  const extras = [
+    notes.length ? h('div', { class: 'ag-list' }, h('h4', { class: 'ag-list-h' }, 'Notes'),
+      notes.map((n) => h('button', { class: 'link-row', onclick: () => bus.navigate(`notes/${n.id}`) }, n.title || 'Untitled note'))) : null,
+    voices.length ? h('div', { class: 'ag-list' }, h('h4', { class: 'ag-list-h' }, 'Voice notes'),
+      voices.map((v) => h('button', { class: 'link-row', onclick: () => bus.navigate('voice') }, v.transcript?.slice(0, 60) || 'Recording'))) : null,
+  ].filter(Boolean);
+
+  const planned = h('section', { class: 'ag-col' },
+    h('h3', { class: 'block-h' }, 'Planned'),
+    listBlocks.length || extras.length ? [listBlocks, extras] : h('p', { class: 'empty' }, 'Nothing written for this day yet'));
+
+  return h('div', { class: 'agenda2' }, schedule, planned);
 }
 
 // ---------- week (spread: Sun-Wed left page, Thu-Sat + notes right page) ----------
@@ -193,7 +215,7 @@ export function dayPage(day, { compact = false } = {}) {
   const sections = model.sections().filter((x) => ['todos', 'errands', 'list'].includes(x.type));
   const todos = model.sectionByType('todos');
   const top3 = todos ? model.itemsForDay(todos.id, day).filter((i) => i.priority >= 3 && !i.done) : [];
-  const notes = zoomPage(`day:${day}:notes`, { paper: 'lined', height: '62vh', logicalH: 1400, grow: true, minH: 1400, label: 'Notes for the day' });
+  const notes = zoomPage(`day:${day}:notes`, { paper: 'dotted', height: '62vh', logicalH: 1400, grow: true, minH: 1400, label: 'Notes for the day' });
 
   return h('div', { class: `daypage spread ${compact ? 'compact' : ''}` },
     h('div', { class: 'page left' },

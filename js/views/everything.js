@@ -1,7 +1,8 @@
 import { icon } from '../icons.js';
 // The Everything view: an open planner spread. Calendar on one page, lists and
 // notes on the other. Panels resize, move, collapse, and open in a bigger view.
-import { h, menu } from '../ui.js';
+import { h, menu, sheet, colorRow, toast } from '../ui.js';
+import * as store from '../store.js';
 import * as model from '../model.js';
 import { renderSection } from './section.js';
 import { bus } from '../bus.js';
@@ -27,9 +28,12 @@ export function renderEverything(host) {
   host.append(h('div', { class: 'everything-wrap' },
     h('div', { class: 'everything-bar' },
       h('h2', { class: 'every-title' }, 'Dashboard'),
-      unused.length ? h('button', { class: 'chip', onclick: (e) => menu(e.currentTarget, unused.map((s) => ({
-        label: `Add ${s.name}`, run: () => model.saveLayout({ right: [...model.layout().right, s.id] }),
-      }))) }, 'Add section') : null,
+      h('button', { class: 'chip', onclick: (e) => menu(e.currentTarget, [
+        { label: 'New checklist section', run: () => newSection('list') },
+        { label: 'New notes section', run: () => newSection('notes') },
+        ...(unused.length ? ['-', { el: h('div', { class: 'menu-label' }, 'Show an existing section here') }] : []),
+        ...unused.map((s) => ({ label: s.name, run: () => model.saveLayout({ right: [...model.layout().right, s.id] }) })),
+      ]) }, 'Add section'),
       h('button', { class: 'chip', onclick: () => model.saveLayout({ ...model.DEFAULT_LAYOUT }) }, 'Reset layout')),
     spread));
 }
@@ -116,4 +120,23 @@ function enablePanelResize(handle, el, id) {
     handle.addEventListener('pointermove', move);
     handle.addEventListener('pointerup', up);
   });
+}
+
+// Create a brand-new section: it gets its own tab and appears on the dashboard.
+function newSection(type) {
+  const pal = model.PALETTES[model.settings().palette] || model.PALETTES.winner;
+  const n = model.sections({ includeHidden: true }).length;
+  let name = '';
+  let color = pal.swatches[n % pal.swatches.length];
+  const input = h('input', { placeholder: type === 'list' ? 'e.g. Work, Wedding, Gym' : 'e.g. Ideas, Journal', 'aria-label': 'Section name', oninput: (e) => { name = e.target.value; } });
+  sheet(type === 'list' ? 'New checklist section' : 'New notes section', h('div', { class: 'form' },
+    h('label', {}, 'Name', input),
+    h('div', {}, h('div', { class: 'menu-label' }, 'Tab color'), colorRow(pal.swatches, color, (c) => { color = c; }, { custom: true }))), {
+    actions: [{ label: 'Cancel' }, { label: 'Create', kind: 'primary', run: () => {
+      if (!name.trim()) { toast('Give it a name'); return false; }
+      const sec = store.put('sections', { id: store.uid(), type, name: name.trim(), color, order: n, hidden: false, custom: true });
+      model.saveLayout({ right: [...model.layout().right, sec.id] });
+    } }],
+  });
+  setTimeout(() => input.focus(), 50);
 }
