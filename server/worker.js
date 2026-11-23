@@ -79,6 +79,16 @@ export default {
     const rec = key ? JSON.parse((await env.SP_KV.get(key)) || 'null') : null;
     if (!rec) return json({ error: 'signed_out' }, 401);
 
+    // Voice note transcripts (needs the Workers AI binding named AI).
+    if (url.pathname === '/transcribe') {
+      if (!env.AI) return json({ error: 'no_ai' }, 501);
+      if (!body.audio || body.audio.length > 25_000_000) return json({ error: 'bad_audio' }, 400);
+      try {
+        const out = await env.AI.run('@cf/openai/whisper-large-v3-turbo', { audio: body.audio });
+        return json({ text: (out.text || '').trim() });
+      } catch (e) { return json({ error: 'ai_error' }, 502); }
+    }
+
     // 3) Fresh access token, any time.
     if (url.pathname === '/token') {
       const tok = await googleToken(env, { refresh_token: rec.rt, grant_type: 'refresh_token' });
