@@ -85,7 +85,7 @@ export const DEFAULT_SETTINGS = {
   pen: { tool: 'pen', color: '#3A1C22', w: 2 },
   sectionStyles: {}, // sectionId -> {font,size,color,b,i}
   googleClientId: '',
-  authServer: '', // always-connected server URL (see /server)
+  authServer: 'https://sahitis-planner-auth.sahitisarma.workers.dev', // always-connected server URL (see /server)
   hiddenCalendars: [],
   defaultCalendar: '',
   newTaskList: '', // Google Tasks list for new to-dos ('' = keep in planner only)

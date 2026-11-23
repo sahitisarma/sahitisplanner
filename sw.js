@@ -1,6 +1,6 @@
 // Offline support: the planner opens even without a connection.
 // Bump VERSION when you publish changes so iPads pick up the new files.
-const VERSION = 'sp-v9';
+const VERSION = 'sp-v10';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css', './css/fonts.css',
   './js/app.js', './js/store.js', './js/model.js', './js/dates.js', './js/ui.js', './js/ink.js', './js/dock.js',

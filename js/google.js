@@ -16,7 +16,8 @@ const SESSION_KEY = 'sp-google-session';
 
 export function clientId() { return (model.settings().googleClientId || '').trim(); }
 // Always-connected mode: a tiny server (see /server) that keeps Google signed in.
-export function authServer() { return (model.settings().authServer || '').trim().replace(/\/$/, ''); }
+export const DEFAULT_SERVER = 'https://sahitis-planner-auth.sahitisarma.workers.dev';
+export function authServer() { return ((model.settings().authServer || '').trim() || DEFAULT_SERVER).replace(/\/$/, ''); }
 export function session() { return localStorage.getItem(SESSION_KEY) || ''; }
 export function alwaysOn() { return !!(authServer() && session()); }
 export function configured() { return !!(authServer() || clientId()); }
