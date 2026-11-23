@@ -1,12 +1,12 @@
 // Offline support: the planner opens even without a connection.
 // Bump VERSION when you publish changes so iPads pick up the new files.
-const VERSION = 'sp-v3';
+const VERSION = 'sp-v4';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css', './css/fonts.css',
   './js/app.js', './js/store.js', './js/model.js', './js/dates.js', './js/ui.js', './js/ink.js', './js/dock.js',
   './js/bus.js', './js/organize.js', './js/google.js', './js/events.js', './js/queue.js', './js/sync.js',
   './js/views/items.js', './js/views/inkpad.js', './js/views/calendar.js', './js/views/lists.js', './js/views/notes.js',
-  './js/views/voice.js', './js/views/capture.js', './js/views/everything.js', './js/views/section.js', './js/views/settings.js',
+  './js/views/voice.js', './js/views/capture.js', './js/views/everything.js', './js/views/section.js', './js/views/settings.js', './js/views/checklist.js', './js/colorpicker.js',
   './icons/icon.svg', './icons/apple-touch-icon.png', './icons/icon-192.png', './icons/icon-512.png',
   './fonts/playfair-display-latin-wght-normal.woff2', './fonts/playfair-display-latin-wght-italic.woff2', './fonts/inter-latin-wght-normal.woff2', './fonts/bodoni-moda-latin-wght-normal.woff2', './fonts/bodoni-moda-latin-wght-italic.woff2', './fonts/bagel-fat-one-latin-400-normal.woff2', './fonts/caveat-latin-wght-normal.woff2', './fonts/dm-sans-latin-wght-italic.woff2', './fonts/dm-sans-latin-wght-normal.woff2', './fonts/dm-serif-display-latin-400-italic.woff2', './fonts/dm-serif-display-latin-400-normal.woff2', './fonts/fraunces-latin-wght-italic.woff2', './fonts/fraunces-latin-wght-normal.woff2', './fonts/gaegu-latin-400-normal.woff2', './fonts/gaegu-latin-700-normal.woff2', './fonts/gloock-latin-400-normal.woff2', './fonts/kalam-latin-400-normal.woff2', './fonts/kalam-latin-700-normal.woff2', './fonts/outfit-latin-wght-normal.woff2', './fonts/patrick-hand-latin-400-normal.woff2', './fonts/shrikhand-latin-400-normal.woff2', './fonts/space-grotesk-latin-wght-normal.woff2',
 ];

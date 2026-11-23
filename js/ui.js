@@ -85,6 +85,7 @@ export function menu(anchor, items) {
   setTimeout(() => document.addEventListener('pointerdown', outside, true), 0);
   return m;
 }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
 function outside(e) { if (openMenu && !openMenu.contains(e.target)) closeMenu(); }
 export function closeMenu() {
   openMenu?.remove(); openMenu = null;
@@ -147,8 +148,13 @@ export function colorRow(colors, value, onPick, { custom = true } = {}) {
         style: { background: c }, 'aria-label': `Color ${c}`,
         onclick: () => { value = c; onPick(c); draw(); },
       })),
-      custom && h('label', { class: 'swatch custom', 'aria-label': 'Custom color' },
-        h('input', { type: 'color', value: value || '#000000', oninput: (e) => { value = e.target.value; onPick(value); } }), '+'));
+      custom && h('button', { class: 'swatch custom', 'aria-label': 'Mix a custom color', onclick: async () => {
+        const { colorMixer } = await import('./colorpicker.js');
+        let picked = value || '#2F2B27';
+        sheet('Mix a color', colorMixer(picked, (c) => { picked = c; }), {
+          actions: [{ label: 'Cancel' }, { label: 'Use color', kind: 'primary', run: () => { value = picked; onPick(picked); draw(); } }],
+        });
+      } }));
   };
   draw();
   return row;

@@ -4,8 +4,9 @@ import * as D from '../dates.js';
 import * as E from '../events.js';
 import * as model from '../model.js';
 import * as store from '../store.js';
-import { inkPad } from './inkpad.js';
-import { itemList, composer } from './items.js';
+import { inkPad, zoomPage } from './inkpad.js';
+import { itemList } from './items.js';
+import { checklistPage, carriedLines } from './checklist.js';
 import { bus } from '../bus.js';
 import * as sync from '../sync.js';
 
@@ -31,7 +32,7 @@ export function renderCalendar(host, { compact = false } = {}) {
     h('div', { class: 'seg', role: 'tablist' }, ['month', 'week', 'day'].map((v) =>
       h('button', { class: view === v ? 'on' : '', role: 'tab', 'aria-selected': String(view === v), onclick: () => { calState.view = v; saveCal(); bus.rerender(); } }, v[0].toUpperCase() + v.slice(1)))),
     h('button', { class: 'chip', title: 'Show or hide calendars', onclick: (e) => calendarsMenu(e.currentTarget) }, 'Calendars'),
-    h('button', { class: 'btn primary sm', onclick: () => openEventEditor(null, { day: calState.day }) }, '+ Event')));
+    h('button', { class: 'btn primary sm', onclick: () => openEventEditor(null, { day: calState.day }) }, 'New event')));
 
   if (view === 'month') wrap.append(monthView(calState.day));
   else if (view === 'week') wrap.append(weekView(calState.day));
@@ -110,7 +111,7 @@ export function openDaySheet(day) {
   const draw = () => {
     fill(body, 
       h('div', { class: 'row gap' },
-        h('button', { class: 'btn primary sm', onclick: () => { s.close(); openEventEditor(null, { day }); } }, '+ Event'),
+        h('button', { class: 'btn primary sm', onclick: () => { s.close(); openEventEditor(null, { day }); } }, 'New event'),
         h('button', { class: 'btn sm', onclick: () => { s.close(); calState.day = day; calState.view = 'day'; bus.navigate('calendar'); } }, 'Open day page')),
       dayAgenda(day));
   };
@@ -130,8 +131,7 @@ function dayAgenda(day) {
     lists.map((sec) => {
       const items = model.itemsForDay(sec.id, day);
       return h('div', {}, h('h3', { class: 'agenda-h', style: { '--c': sec.color } }, sec.name),
-        itemList(items, { day, empty: 'Nothing planned.', showStore: sec.type === 'tobuy' }),
-        composer({ section: sec.id, date: day, storeId: sec.type === 'tobuy' ? model.storesSorted()[0]?.id : null, placeholder: `Add to ${sec.name}` }));
+        itemList(items, { day, empty: 'Nothing typed for this day.', showStore: sec.type === 'tobuy' }));
     }),
     notes.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Notes'), notes.map((n) => h('button', { class: 'link-row', onclick: () => bus.navigate(`notes/${n.id}`) }, `✎ ${n.title || 'Untitled note'}`))) : null,
     voices.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Voice notes'), voices.map((v) => h('button', { class: 'link-row', onclick: () => bus.navigate('voice') }, `◉ ${v.transcript?.slice(0, 60) || 'Recording'}`))) : null,
@@ -155,11 +155,11 @@ function weekView(k) {
       h('div', { class: 'wevents' }, evs.map((o) => eventChip(o))),
       itemList(items, { day, empty: '', showSection: true }),
       h('div', { class: 'wink paper-lined' }));
-    queueMicrotask(() => inkPad(box.querySelector('.wink'), `daybox:${day}`, { logicalH: 260, grow: true, minH: 260, label: `Notes for ${D.fmtFull(day)}` }));
+    queueMicrotask(() => inkPad(box.querySelector('.wink'), `daybox:${day}`, { logicalH: 420, grow: true, minH: 420, label: `Notes for ${D.fmtFull(day)}` }));
     return box;
   };
   const notesBox = h('div', { class: 'wday notes' }, h('div', { class: 'wday-head static' }, h('span', { class: 'wdow' }, 'Notes')), h('div', { class: 'wink paper-dotted' }));
-  queueMicrotask(() => inkPad(notesBox.querySelector('.wink'), `week:${days[0]}`, { logicalH: 500, grow: true, minH: 500, label: 'Week notes' }));
+  queueMicrotask(() => inkPad(notesBox.querySelector('.wink'), `week:${days[0]}`, { logicalH: 900, grow: true, minH: 900, label: 'Week notes' }));
   return h('div', { class: 'week spread' },
     h('div', { class: 'page left' }, days.slice(0, 4).map(dayBox)),
     h('div', { class: 'page right' }, days.slice(4).map(dayBox), notesBox));
@@ -192,8 +192,7 @@ export function dayPage(day, { compact = false } = {}) {
   const sections = model.sections().filter((x) => ['todos', 'errands', 'list'].includes(x.type));
   const todos = model.sectionByType('todos');
   const top3 = todos ? model.itemsForDay(todos.id, day).filter((i) => i.priority >= 3 && !i.done) : [];
-  const notes = h('div', { class: 'day-notes paper-lined' });
-  queueMicrotask(() => inkPad(notes, `day:${day}:notes`, { logicalH: 420, grow: true, minH: 420, label: 'Notes for the day' }));
+  const notes = zoomPage(`day:${day}:notes`, { paper: 'lined', height: '62vh', logicalH: 1400, grow: true, minH: 1400, label: 'Notes for the day' });
 
   return h('div', { class: `daypage spread ${compact ? 'compact' : ''}` },
     h('div', { class: 'page left' },
@@ -201,16 +200,20 @@ export function dayPage(day, { compact = false } = {}) {
         h('span', { class: 'day-num' }, String(ds.getDate())),
         h('div', {}, h('div', { class: 'day-dow' }, ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][ds.getDay()]),
           h('div', { class: 'day-month' }, D.fmtMonth(day)))),
-      h('h3', { class: 'block-h' }, 'Schedule ✦'),
+      h('h3', { class: 'block-h' }, 'Schedule'),
       allDay.length ? h('div', { class: 'allday-row' }, allDay.map((o) => eventChip(o))) : null,
       timeline),
     compact ? null : h('div', { class: 'page right' },
-      top3.length ? h('div', { class: 'card' }, h('h3', { class: 'block-h' }, 'Top priorities ✦'), itemList(top3, { day })) : null,
-      sections.map((sec) => h('div', { class: 'card', style: { '--c': sec.color } },
-        h('h3', { class: 'block-h' }, sec.name),
-        itemList(model.itemsForDay(sec.id, day), { day, empty: 'Nothing planned. Unfinished items roll here automatically.' }),
-        composer({ section: sec.id, date: day, placeholder: `Add to ${sec.name}` }))),
-      h('div', { class: 'card' }, h('h3', { class: 'block-h' }, 'Notes ✦'), notes),
+      top3.length ? h('div', { class: 'card' }, h('h3', { class: 'block-h' }, 'Top priorities'), itemList(top3, { day })) : null,
+      sections.map((sec) => {
+        const typed = model.itemsForDay(sec.id, day);
+        return h('div', { class: 'card', style: { '--c': sec.color } },
+          h('h3', { class: 'block-h' }, sec.name),
+          carriedLines(sec.id, day),
+          typed.length ? itemList(typed, { day }) : null,
+          checklistPage(`day:${day}:${sec.id}`, { minRows: 7, label: `${sec.name} for ${D.fmtFull(day)}` }));
+      }),
+      h('div', { class: 'card' }, h('h3', { class: 'block-h' }, 'Notes'), notes),
       voiceForDay(day)));
 }
 

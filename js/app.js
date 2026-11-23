@@ -30,13 +30,12 @@ async function boot() {
     h('div', { id: 'app' },
       h('header', { id: 'topbar' },
         h('button', { class: 'logo', onclick: () => navigate('everything'), 'aria-label': 'Everything view' }, 'Sahiti’s Planner'),
-        h('span', { id: 'today-chip' }),
+        h('div', { id: 'toolbar-host' }),
         h('div', { class: 'top-right' },
           h('button', { id: 'status', class: 'status', 'aria-live': 'polite', onclick: onStatusTap }),
           h('button', { class: 'icon-btn', 'aria-label': 'Settings', title: 'Settings', onclick: () => navigate('settings') }, '⚙'))),
       h('main', { id: 'main', 'data-scroll-key': 'main' })),
     h('nav', { id: 'tabs', 'aria-label': 'Sections' }),
-    h('div', { id: 'dock-host' }),
     h('div', { id: 'toasts', 'aria-live': 'polite' }));
 
   bus.navigate = navigate;
@@ -50,7 +49,8 @@ async function boot() {
     const r = location.hash.startsWith('#/') ? location.hash.slice(2) : '';
     if (r && r !== route) navigate(r);
   });
-  mountDock($('#dock-host'), { onCapture: () => openCapture() });
+  mountDock($('#toolbar-host'), { onCapture: () => openCapture(), onFocus: toggleFocus });
+  if (localStorage.getItem('sp-focus') === '1') document.documentElement.classList.add('focus');
   wireStoreEvents();
   render();
   renderStatus();
@@ -65,7 +65,7 @@ async function boot() {
 // ---------- theme ----------
 export function applyTheme() {
   const s = model.settings();
-  const p = model.PALETTES[s.palette] || model.PALETTES.retro;
+  const p = model.PALETTES[s.palette] || model.PALETTES.winner;
   const r = document.documentElement.style;
   r.setProperty('--paper', p.paper);
   r.setProperty('--ink', p.ink);
@@ -82,6 +82,13 @@ export function applyTheme() {
   r.setProperty('--fs', `${s.fontSize}px`);
   document.documentElement.dataset.pattern = p.pattern;
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', p.backdrop[0]);
+}
+
+// Focus mode: hide the tabs and headers so the page gets the whole screen.
+function toggleFocus() {
+  const on = document.documentElement.classList.toggle('focus');
+  try { localStorage.setItem('sp-focus', on ? '1' : '0'); } catch {}
+  toast(on ? 'Focus mode on. Tap the corners icon again to exit.' : 'Focus mode off', { ms: 1800 });
 }
 
 // ---------- routing ----------
@@ -121,7 +128,6 @@ function render({ resetScroll = false } = {}) {
   const act = document.activeElement;
   const focus = act?.dataset?.fk ? { fk: act.dataset.fk, s: act.selectionStart, e: act.selectionEnd } : null;
   renderTabs();
-  $('#today-chip').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
   fill(main);
   main.className = `route-${route.split('/')[0]}`;
   if (route === 'everything') renderEverything(main);
@@ -160,8 +166,14 @@ function renderTabs() {
   const cur = route.split('/')[0] === 'notes' && route.includes('/') ? 'notes' : route;
   fill(tabs, 
     h('button', { class: `tab ${cur === 'everything' ? 'on' : ''}`, style: { '--c': 'var(--ink)' }, onclick: () => navigate('everything') }, h('span', {}, '✦ Everything')),
-    ...model.sections().map((s) => h('button', { class: `tab ${cur === s.id ? 'on' : ''}`, style: { '--c': s.color }, onclick: () => navigate(s.id) }, h('span', {}, s.name))),
-    h('button', { class: `tab add ${cur === 'settings' ? 'on' : ''}`, style: { '--c': 'var(--s6)' }, 'aria-label': 'Manage sections', onclick: () => navigate('settings') }, h('span', {}, '＋')));
+    ...model.sections().map((s) => h('button', { class: `tab ${cur === s.id ? 'on' : ''}`, style: { '--c': s.color, '--tc': textOn(s.color) }, onclick: () => navigate(s.id) }, h('span', {}, s.name))),
+    h('button', { class: `tab add ${cur === 'settings' ? 'on' : ''}`, style: { '--c': 'var(--s6)' }, 'aria-label': 'Manage sections', onclick: () => navigate('settings') }, h('span', {}, 'Edit')));
+}
+
+function textOn(hex) {
+  const n = parseInt((hex || '#000000').slice(1), 16);
+  const l = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return l > 0.66 ? '#3A1C22' : '#FFFFFF';
 }
 
 // ---------- store -> UI ----------

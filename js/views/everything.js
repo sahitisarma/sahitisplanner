@@ -16,7 +16,7 @@ export function renderEverything(host) {
   const page = (side, ids) => {
     const p = h('div', { class: `page ${side}`, 'data-side': side },
       ids.map((id, i) => panel(id, side, i, ids.length, L)));
-    if (!ids.length) p.append(h('p', { class: 'empty' }, 'Empty page. Add a section with ＋.'));
+    if (!ids.length) p.append(h('p', { class: 'empty' }, 'Empty page. Use Add section.'));
     return p;
   };
   const gutter = h('div', { class: 'spine', role: 'separator', 'aria-label': 'Drag to resize pages' }, h('span', { class: 'rings' }));
@@ -28,7 +28,7 @@ export function renderEverything(host) {
       h('h2', { class: 'every-title' }, 'Everything ✦'),
       unused.length ? h('button', { class: 'chip', onclick: (e) => menu(e.currentTarget, unused.map((s) => ({
         label: `Add ${s.name}`, run: () => model.saveLayout({ right: [...model.layout().right, s.id] }),
-      }))) }, '＋ Add section') : null,
+      }))) }, 'Add section') : null,
       h('button', { class: 'chip', onclick: () => model.saveLayout({ ...model.DEFAULT_LAYOUT }) }, 'Reset layout')),
     spread));
 }
@@ -67,8 +67,8 @@ function arrangeMenu(anchor, id, side, idx, count) {
     idx > 0 && { label: 'Move up', icon: '↑', run: () => move((n) => { const a = n[side]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; }) },
     idx < count - 1 && { label: 'Move down', icon: '↓', run: () => move((n) => { const a = n[side]; [a[idx + 1], a[idx]] = [a[idx], a[idx + 1]]; }) },
     { label: `Move to ${other} page`, icon: side === 'left' ? '→' : '←', run: () => move((n) => { n[side] = n[side].filter((x) => x !== id); n[other].push(id); }) },
-    { label: 'Make bigger', icon: '＋', run: () => model.saveLayout({ sizes: { ...L.sizes, [id]: Math.min(5, (L.sizes[id] || 1) + 0.5) } }) },
-    { label: 'Make smaller', icon: '−', run: () => model.saveLayout({ sizes: { ...L.sizes, [id]: Math.max(0.4, (L.sizes[id] || 1) - 0.4) } }) },
+    { label: 'Make bigger', icon: '↕', run: () => model.saveLayout({ sizes: { ...L.sizes, [id]: Math.min(5, (L.sizes[id] || 1) + 0.5) } }) },
+    { label: 'Make smaller', icon: '↕', run: () => model.saveLayout({ sizes: { ...L.sizes, [id]: Math.max(0.4, (L.sizes[id] || 1) - 0.4) } }) },
     { label: L.collapsed[id] ? 'Expand' : 'Collapse', icon: '▾', run: () => toggle(id) },
     '-',
     { label: 'Remove from Everything', icon: '✕', run: () => move((n) => { n[side] = n[side].filter((x) => x !== id); }) },

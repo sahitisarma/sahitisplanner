@@ -3,7 +3,7 @@ import { h, menu, debounce, confirmSheet, dateButton, toast, colorRow } from '..
 import * as store from '../store.js';
 import * as model from '../model.js';
 import * as D from '../dates.js';
-import { inkPad } from './inkpad.js';
+import { inkPad, zoomPage } from './inkpad.js';
 import { thumbnail } from '../ink.js';
 import { bus } from '../bus.js';
 
@@ -24,15 +24,15 @@ export function renderNotes(host, sec, { compact = false, noteId } = {}) {
   if (!current) { current = newNote(sec.id); list = notesSorted(sec.id); }
   try { localStorage.setItem(`sp-note-${sec.id}`, current.id); } catch {}
 
-  const side = h('div', { class: 'note-list' },
-    h('button', { class: 'btn primary sm block', onclick: () => { const n = newNote(sec.id); localStorage.setItem(`sp-note-${sec.id}`, n.id); bus.rerender(); } }, '+ New page'),
+  const side = h('div', { class: 'note-strip' },
+    h('button', { class: 'note-new', 'aria-label': 'New page', onclick: () => { const n = newNote(sec.id); localStorage.setItem(`sp-note-${sec.id}`, n.id); bus.rerender(); } }, 'New page'),
     list.map((n) => {
       const ink = store.get('ink', `note:${n.id}`);
       const card = h('button', { class: `note-card ${n.id === current.id ? 'on' : ''}`, onclick: () => { localStorage.setItem(`sp-note-${sec.id}`, n.id); bus.rerender(); } },
         h('div', { class: 'note-thumb' }),
         h('div', { class: 'note-card-title' }, n.title || 'Untitled'),
         h('div', { class: 'note-card-date' }, D.fmtShort(D.key(new Date(n.createdAt || Date.now())))));
-      if (ink?.strokes?.length) queueMicrotask(() => card.querySelector('.note-thumb').append(thumbnail(ink.strokes.slice(0, 400), 120, 1000, 260)));
+      if (ink?.strokes?.length) queueMicrotask(() => card.querySelector('.note-thumb').append(thumbnail(ink.strokes.slice(0, 400), 96, 1000, 1300)));
       return card;
     }));
 
@@ -48,7 +48,7 @@ export function notePage(n, sec, { compact = false } = {}) {
   text.addEventListener('input', saveText);
   text.addEventListener('blur', () => saveText.flush());
   const fmt = (cmd, val) => { text.focus(); document.execCommand(cmd, false, val); saveText(); };
-  const pal = model.PALETTES[model.settings().palette] || model.PALETTES.retro;
+  const pal = model.PALETTES[model.settings().palette] || model.PALETTES.winner;
   const toolbar = h('div', { class: 'text-toolbar' },
     h('button', { class: 'tb', onmousedown: (e) => e.preventDefault(), onclick: () => fmt('bold') }, h('b', {}, 'B')),
     h('button', { class: 'tb', onmousedown: (e) => e.preventDefault(), onclick: () => fmt('italic') }, h('i', {}, 'I')),
@@ -58,19 +58,18 @@ export function notePage(n, sec, { compact = false } = {}) {
     h('button', { class: 'tb', onmousedown: (e) => e.preventDefault(), onclick: (e) => menu(e.currentTarget, [['Small', 2], ['Normal', 3], ['Large', 5], ['Huge', 6]].map(([l, v]) => ({ label: l, run: () => fmt('fontSize', v) }))) }, 'Size'),
     h('button', { class: 'tb', onmousedown: (e) => e.preventDefault(), onclick: () => fmt('insertUnorderedList') }, '• List'));
 
-  const page = h('div', { class: `note-ink paper-${n.paper || 'lined'}` });
-  queueMicrotask(() => inkPad(page, `note:${n.id}`, {
-    logicalH: 1300, grow: true, minH: 1300, label: 'Handwriting page',
+  const page = zoomPage(`note:${n.id}`, {
+    paper: n.paper || 'lined', height: compact ? '52vh' : 'calc(100vh - 230px)',
+    logicalH: 1600, grow: true, minH: 1600, label: 'Handwriting page',
     onConvert: (t, surf) => {
       text.innerHTML += `${text.innerHTML ? '<br>' : ''}${t.replace(/</g, '&lt;')}`;
       saveText.flush();
       surf.deleteSelection();
       toast('Added to typed notes');
     },
-  }));
-
+  });
   const metaRow = h('div', { class: 'note-meta' },
-    h('select', { 'aria-label': 'Paper', onchange: (e) => { store.put('notes', { id: n.id, paper: e.target.value }, { quiet: true }); page.className = `note-ink ink-host paper-${e.target.value}`; } },
+    h('select', { 'aria-label': 'Paper', onchange: (e) => { store.put('notes', { id: n.id, paper: e.target.value }, { quiet: true }); const pg = page.querySelector('.zoom-page'); pg.className = pg.className.replace(/paper-\w+/, `paper-${e.target.value}`); } },
       model.PAPERS.map((p) => h('option', { value: p, selected: (n.paper || 'lined') === p }, p[0].toUpperCase() + p.slice(1)))),
     h('span', { class: 'lbl' }, 'Day:'),
     dateButton(n.date, (d) => store.put('notes', { id: n.id, date: d }, { quiet: true }), { placeholder: 'Link to a day' }),

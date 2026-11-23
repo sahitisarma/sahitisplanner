@@ -4,10 +4,17 @@ import { todayKey, diffDays } from './dates.js';
 
 // ---------- palettes pulled from the inspiration board ----------
 export const PALETTES = {
+  winner: {
+    name: 'Winner', pattern: 'stripes',
+    paper: '#FDF9F5', ink: '#3A1C22', line: '#F2E4E1', backdrop: ['#F3C3CF', '#FCEEF1'],
+    swatches: ['#C0283A', '#7A1F2E', '#E58FA5', '#B8868F', '#3A1C22', '#5B6C8F', '#D8B4A0', '#9A9693'],
+    sections: { calendar: '#7A1F2E', todos: '#C0283A', errands: '#B8868F', tobuy: '#E58FA5', notes: '#D97F95', voice: '#9A9693' },
+  },
   retro: {
     name: 'Modern Retro', pattern: 'checker',
     paper: '#FAF6EF', ink: '#2F2B27', line: '#ECE4D6', backdrop: ['#C9D3C0', '#E6DCCB'],
     swatches: ['#D9663F', '#7E9C76', '#E2A93B', '#6F8FB3', '#D98B9C', '#7A4B6B', '#A9A3CF', '#8A8F4A'],
+    sections: { calendar: '#6F8FB3', todos: '#D9663F', errands: '#7E9C76', tobuy: '#E2A93B', notes: '#D98B9C', voice: '#7A4B6B' },
   },
   vibrant: {
     name: 'Vibrant', pattern: 'checker',
@@ -54,30 +61,28 @@ export const SECTION_TYPES = {
 };
 
 const DEFAULT_SECTIONS = [
-  { id: 'calendar', type: 'calendar', name: 'Calendar', color: '#6F8FB3' },
-  { id: 'todos', type: 'todos', name: 'To-Dos', color: '#D9663F' },
-  { id: 'errands', type: 'errands', name: 'Errands', color: '#7E9C76' },
-  { id: 'tobuy', type: 'tobuy', name: 'To Buy', color: '#E2A93B' },
-  { id: 'notes', type: 'notes', name: 'Notes', color: '#D98B9C' },
-  { id: 'voice', type: 'voice', name: 'Voice Notes', color: '#7A4B6B' },
+  { id: 'calendar', type: 'calendar', name: 'Calendar', color: '#7A1F2E' },
+  { id: 'todos', type: 'todos', name: 'To-Dos', color: '#C0283A' },
+  { id: 'errands', type: 'errands', name: 'Errands', color: '#B8868F' },
+  { id: 'tobuy', type: 'tobuy', name: 'To Buy', color: '#E58FA5' },
+  { id: 'notes', type: 'notes', name: 'Notes', color: '#D97F95' },
+  { id: 'voice', type: 'voice', name: 'Voice Notes', color: '#9A9693' },
 ];
 
 export const DEFAULT_SETTINGS = {
-  palette: 'retro',
+  palette: 'winner',
   fontDisplay: 'Playfair Display',
   fontBody: 'Inter',
   fontSize: 18,
   paper: 'lined',
   fingerDraw: false,
-  favColors: ['#2F2B27', '#D9663F', '#6F8FB3', '#7E9C76', '#D98B9C', '#E2A93B'],
+  favColors: ['#3A1C22', '#C0283A', '#7A1F2E', '#E58FA5', '#5B6C8F', '#9A9693'],
   penPresets: [
-    { id: 'p1', tool: 'pen', color: '#2F2B27', w: 2.2, name: 'Fine black' },
-    { id: 'p2', tool: 'pen', color: '#6F8FB3', w: 3, name: 'Blue' },
-    { id: 'p3', tool: 'pen', color: '#D9663F', w: 3.6, name: 'Terracotta' },
-    { id: 'p4', tool: 'hl', color: '#F2CF6B', w: 14, name: 'Yellow highlight' },
-    { id: 'p5', tool: 'hl', color: '#F1C3CC', w: 14, name: 'Pink highlight' },
+    { id: 'p1', tool: 'pen', color: '#3A1C22', w: 2, name: 'Fine ink' },
+    { id: 'p2', tool: 'pen', color: '#C0283A', w: 3, name: 'Cherry red' },
+    { id: 'p3', tool: 'hl', color: '#F3B7C6', w: 16, name: 'Pink highlight' },
   ],
-  pen: { tool: 'pen', color: '#2F2B27', w: 2.2 },
+  pen: { tool: 'pen', color: '#3A1C22', w: 2 },
   sectionStyles: {}, // sectionId -> {font,size,color,b,i}
   googleClientId: '',
   authServer: '', // always-connected server URL (see /server)
@@ -110,7 +115,32 @@ export function saveLayout(patch) {
   store.setMeta('layout', { ...(store.meta('layout', {}) || {}), ...patch });
 }
 
+const OLD_DEFAULTS = ['#3D5DA8', '#E4572E', '#3E8E3E', '#F39237', '#EC6AA0', '#7B1E2E', '#6F8FB3', '#D9663F', '#7E9C76', '#E2A93B', '#D98B9C', '#7A4B6B'];
+
+// Choosing a palette also recolors the built-in sections to match.
+export function applyPalette(id) {
+  const p = PALETTES[id];
+  if (!p) return;
+  saveSettings({ palette: id, favColors: [p.ink, ...p.swatches.filter((c) => c !== p.ink)].slice(0, 6) });
+  for (const sec of sections({ includeHidden: true })) {
+    const c = p.sections?.[sec.type] || p.swatches[(sec.order || 0) % p.swatches.length];
+    if (c && sec.color !== c) store.put('sections', { id: sec.id, color: c });
+  }
+}
+
 export function seed() {
+  // Move older installs to the new look once
+  if (!store.meta('local:migr-winner')) {
+    const st = store.meta('settings', {}) || {};
+    if (!st.palette || ['vibrant', 'retro'].includes(st.palette)) {
+      store.setMeta('settings', { ...st, palette: 'winner', fontDisplay: 'Playfair Display', fontBody: 'Inter', pen: DEFAULT_SETTINGS.pen, favColors: DEFAULT_SETTINGS.favColors, penPresets: DEFAULT_SETTINGS.penPresets }, { silent: true });
+      for (const sec of store.all('sections')) {
+        const d = DEFAULT_SECTIONS.find((x) => x.id === sec.id);
+        if (d && OLD_DEFAULTS.includes(sec.color)) store.put('sections', { id: sec.id, color: d.color }, { silent: true });
+      }
+    }
+    store.setMeta('local:migr-winner', true, { silent: true });
+  }
   if (!store.all('sections', true).length) {
     DEFAULT_SECTIONS.forEach((s, i) => store.put('sections', { ...s, order: i, hidden: false }, { silent: true }));
   }

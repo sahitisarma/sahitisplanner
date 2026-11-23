@@ -181,7 +181,9 @@ export class InkSurface {
       hPx = this.host.clientHeight;
       this.logicalH = hPx / this.scale;
     }
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    // Keep canvases inside iPad Safari's memory limits, even when zoomed in.
+    const MAX_PX = 9_000_000;
+    const dpr = Math.max(0.75, Math.min(2, window.devicePixelRatio || 1, Math.sqrt(MAX_PX / Math.max(1, w * hPx))));
     for (const c of [this.canvas, this.live]) {
       c.width = Math.max(1, Math.round(w * dpr));
       c.height = Math.max(1, Math.round(hPx * dpr));
@@ -189,6 +191,7 @@ export class InkSurface {
     }
     this.dpr = dpr;
     this.redraw();
+    this.opts.onResize?.(this);
     if (this.sel) this.placeSelBox();
   }
 
@@ -241,7 +244,7 @@ export class InkSurface {
 
   down(e) {
     if (!this.canWrite(e)) return;
-    if (e.target.closest('.sel-box')) return; // selection handles handle themselves
+    if (e.target.closest('.sel-box, .cl-box')) return; // selection handles and checkboxes handle themselves
     if (this.opts.eventTarget && e.target.closest('button, input, select, textarea, a, [contenteditable]') && Pen.tool !== 'select' && e.pointerType !== 'pen') return;
     e.preventDefault();
     e.stopPropagation();
@@ -533,4 +536,70 @@ export async function recognize(strokes) {
   const data = await res.json();
   if (data[0] !== 'SUCCESS') throw new Error('Recognition failed');
   return data[1]?.[0]?.[1]?.[0] || '';
+}
+
+// ---------- pinch to zoom (two fingers) ----------
+// viewport: the scrolling box. host: the ink surface inside it.
+// While pinching we scale with a fast CSS transform; when fingers lift we
+// re-render at the new size so ink stays crisp. The Pencil keeps writing normally.
+export function makeZoomable(viewport, host, { min = 1, max = 3, onZoom } = {}) {
+  let scale = 1;
+  let pinch = null;
+  viewport.classList.add('zoom-viewport');
+  const fingers = (e) => [...e.touches].filter((t) => t.touchType !== 'stylus');
+  const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  const apply = (s, cx, cy) => {
+    // cx, cy: pinch center in viewport coordinates
+    const r = viewport.getBoundingClientRect();
+    const px = (viewport.scrollLeft + cx - r.left) / scale;
+    const py = (viewport.scrollTop + cy - r.top) / scale;
+    scale = s;
+    host.style.width = `${s * 100}%`;
+    host.style.transform = '';
+    // after the ResizeObserver re-renders, keep the pinch point under the fingers
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = px * s - (cx - r.left);
+      viewport.scrollTop = py * s - (cy - r.top);
+    });
+    viewport.classList.toggle('zoomed', s > 1.01);
+    onZoom?.(s);
+  };
+  viewport.addEventListener('touchstart', (e) => {
+    const f = fingers(e);
+    if (f.length === 2) {
+      e.preventDefault();
+      const r = host.getBoundingClientRect();
+      const cx = (f[0].clientX + f[1].clientX) / 2, cy = (f[0].clientY + f[1].clientY) / 2;
+      pinch = { d0: dist(f[0], f[1]), s0: scale, cx, cy, ox: cx - r.left, oy: cy - r.top, s: scale };
+      host.style.transformOrigin = `${pinch.ox}px ${pinch.oy}px`;
+    }
+  }, { passive: false });
+  viewport.addEventListener('touchmove', (e) => {
+    if (!pinch) return;
+    const f = fingers(e);
+    if (f.length < 2) return;
+    e.preventDefault();
+    pinch.s = Math.min(max, Math.max(min, pinch.s0 * (dist(f[0], f[1]) / pinch.d0)));
+    host.style.transform = `scale(${pinch.s / pinch.s0})`;
+  }, { passive: false });
+  const end = (e) => {
+    if (!pinch) return;
+    if (fingers(e).length >= 2) return;
+    const p = pinch; pinch = null;
+    apply(p.s, p.cx, p.cy);
+  };
+  viewport.addEventListener('touchend', end);
+  viewport.addEventListener('touchcancel', end);
+  // Safari's own page zoom gestures: keep them off the writing page
+  viewport.addEventListener('gesturestart', (e) => e.preventDefault());
+  // Trackpad / ctrl+wheel zoom on the computer
+  viewport.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    apply(Math.min(max, Math.max(min, scale * (1 - e.deltaY * 0.01))), e.clientX, e.clientY);
+  }, { passive: false });
+  return {
+    get scale() { return scale; },
+    set(s) { const r = viewport.getBoundingClientRect(); apply(Math.min(max, Math.max(min, s)), r.left + r.width / 2, r.top + 40); },
+  };
 }

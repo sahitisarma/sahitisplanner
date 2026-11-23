@@ -25,7 +25,7 @@ function card(title, ...kids) { return h('div', { class: 'card settings-card' },
 // ---------- sections ----------
 function sectionsCard() {
   const secs = model.sections({ includeHidden: true });
-  const pal = model.PALETTES[model.settings().palette] || model.PALETTES.retro;
+  const pal = model.PALETTES[model.settings().palette] || model.PALETTES.winner;
   const reorder = (i, j) => {
     const a = secs[i], b = secs[j];
     store.put('sections', { id: a.id, order: j }); store.put('sections', { id: b.id, order: i });
@@ -49,11 +49,11 @@ function sectionsCard() {
         }
       } }, '✕') : null))),
     h('div', { class: 'row gap wrap' },
-      h('button', { class: 'btn sm', onclick: () => addSection('list') }, '+ New list'),
-      h('button', { class: 'btn sm', onclick: () => addSection('notes') }, '+ New notebook')));
+      h('button', { class: 'btn sm', onclick: () => addSection('list') }, 'New list'),
+      h('button', { class: 'btn sm', onclick: () => addSection('notes') }, 'New notebook')));
 }
 function addSection(type) {
-  const pal = model.PALETTES[model.settings().palette] || model.PALETTES.retro;
+  const pal = model.PALETTES[model.settings().palette] || model.PALETTES.winner;
   const n = model.sections({ includeHidden: true }).length;
   const sec = store.put('sections', { id: store.uid(), type, name: type === 'list' ? 'New list' : 'Notebook', color: pal.swatches[n % pal.swatches.length], order: n, hidden: false, custom: true });
   toast(`${sec.name} added. Rename it below.`);
@@ -65,7 +65,7 @@ function lookCard(s) {
   return card('Look and feel',
     h('div', { class: 'menu-label' }, 'Palette (from your inspiration board)'),
     h('div', { class: 'palette-row' }, Object.entries(model.PALETTES).map(([id, p]) => h('button', {
-      class: `palette ${s.palette === id ? 'on' : ''}`, onclick: () => model.saveSettings({ palette: id }),
+      class: `palette ${s.palette === id ? 'on' : ''}`, onclick: () => model.applyPalette(id),
     }, h('span', { class: `pal-swatch pat-${p.pattern}`, style: { '--b1': p.backdrop[0], '--b2': p.backdrop[1], '--b3': p.backdrop[2] || p.backdrop[0], '--b4': p.backdrop[3] || p.backdrop[1] } }),
       h('span', { class: 'pal-dots' }, p.swatches.slice(0, 5).map((c) => h('i', { style: { background: c } }))),
       h('span', {}, p.name)))),
@@ -92,7 +92,7 @@ function lookCard(s) {
           h('option', { value: '' }, 'Text font'), model.FONTS.body.map((f) => h('option', { value: f, selected: st.font === f }, f))),
         h('select', { 'aria-label': `${sec.name} size`, onchange: (e) => save({ size: Number(e.target.value) || undefined }) },
           h('option', { value: '' }, 'Size'), model.FONT_SIZES.map((z) => h('option', { value: z, selected: st.size === z }, `${z}px`))),
-        h('label', { class: 'swatch custom', title: 'Text color' }, h('input', { type: 'color', value: st.color || '#2b2320', onchange: (e) => save({ color: e.target.value }) }), 'A'));
+        colorRow([], st.color, (c) => save({ color: c })));
     }));
 }
 

@@ -93,7 +93,7 @@ export function itemRow(item, ctx = {}) {
 function mountItemInk(host, item) {
   const surf = new InkSurface(host, {
     strokes: item.ink.strokes,
-    logicalH: Math.max(64, Math.min(400, (item.ink.h || 64))),
+    logicalH: Math.max(90, Math.min(600, (item.ink.h || 90) + 24)),
     label: 'Handwritten item',
     onChange: (strokes, info) => {
       const cur = store.get('items', item.id);
@@ -196,7 +196,7 @@ function formatSheet(item) {
   const save = () => store.put('items', { id: item.id, style });
   const toggle = (k) => h('button', { class: `chip ${style[k] ? 'on' : ''}`, onclick: (e) => { style[k] = !style[k]; e.currentTarget.classList.toggle('on'); save(); } },
     { b: 'Bold', i: 'Italic', u: 'Underline' }[k]);
-  const palette = model.PALETTES[st.palette] || model.PALETTES.retro;
+  const palette = model.PALETTES[st.palette] || model.PALETTES.winner;
   sheet('Format item', h('div', { class: 'form' },
     h('div', { class: 'row gap' }, toggle('b'), toggle('i'), toggle('u')),
     h('label', {}, 'Font', h('select', { onchange: (e) => { style.font = e.target.value; save(); } },
@@ -230,12 +230,12 @@ export function composer({ section, date = null, storeId = null, placeholder = '
     clearTimeout(timer);
     if (!surf.strokes.length) return;
     const { strokes, h: hh } = cropStrokes(surf.strokes, 10);
-    model.newItem({ section, date, store: storeId, ink: { strokes, h: Math.max(64, hh) }, gNew: true });
+    model.newItem({ section, date, store: storeId, ink: { strokes, h: Math.max(90, hh) }, gNew: true });
     surf.strokes = []; surf.redraw();
     hint.hidden = false;
   };
   const surf = new InkSurface(pad, {
-    logicalH: 110,
+    logicalH: 170,
     label: 'Handwriting pad for a new item',
     onStrokeEnd: () => { hint.hidden = true; clearTimeout(timer); timer = setTimeout(commitInk, 1500); },
     onChange: () => {},
