@@ -1,0 +1,16 @@
+# Optional: deploy from the command line with `npx wrangler deploy` (the dashboard copy-paste route in the README works too).
+name = "sahitis-planner-auth"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+APP_ORIGIN = "https://sahitisarma.github.io"
+
+# Create with: npx wrangler kv namespace create SP_KV   then paste the id below
+[[kv_namespaces]]
+binding = "SP_KV"
+id = "PASTE_KV_ID_HERE"
+
+# Secrets (not in this file):
+#   npx wrangler secret put GOOGLE_CLIENT_ID
+#   npx wrangler secret put GOOGLE_CLIENT_SECRET
