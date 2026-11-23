@@ -37,8 +37,8 @@ export const PALETTES = {
 };
 
 export const FONTS = {
-  display: ['Fraunces', 'DM Serif Display', 'Gloock', 'Shrikhand', 'Bagel Fat One'],
-  body: ['Outfit', 'DM Sans', 'Fraunces', 'Space Grotesk', 'Caveat', 'Patrick Hand', 'Kalam', 'Gaegu'],
+  display: ['Playfair Display', 'Bodoni Moda', 'Fraunces', 'DM Serif Display', 'Gloock', 'Shrikhand'],
+  body: ['Inter', 'DM Sans', 'Outfit', 'Fraunces', 'Space Grotesk', 'Caveat', 'Patrick Hand', 'Kalam', 'Gaegu'],
 };
 export const FONT_SIZES = [14, 16, 18, 20, 24, 28];
 export const PAPERS = ['blank', 'lined', 'dotted', 'grid'];
@@ -64,8 +64,8 @@ const DEFAULT_SECTIONS = [
 
 export const DEFAULT_SETTINGS = {
   palette: 'retro',
-  fontDisplay: 'Fraunces',
-  fontBody: 'Outfit',
+  fontDisplay: 'Playfair Display',
+  fontBody: 'Inter',
   fontSize: 18,
   paper: 'lined',
   fingerDraw: false,

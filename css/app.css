@@ -494,7 +494,7 @@ html[data-pattern=pinstripe] #backdrop { background: repeating-linear-gradient(9
   --lift: 0 2px 6px rgba(47, 43, 39, .06), 0 18px 40px rgba(47, 43, 39, .12);
   --shadow: var(--soft);
   --radius: 16px;
-  --font-logo: 'Shrikhand', Georgia, serif;
+  --font-logo: var(--font-display);
   --card: color-mix(in srgb, var(--paper) 55%, white);
 }
 body { letter-spacing: .005em; }
@@ -625,3 +625,12 @@ html[data-pattern=checker] #backdrop { background-size: 120px 120px; }
 .sel-handle { background: var(--s3); }
 .advanced { margin: 4px 0 12px; }
 .advanced summary { font-size: 14px; color: var(--muted); font-weight: 600; cursor: pointer; min-height: 36px; }
+
+/* Editorial serif type, like the cover inspiration */
+.logo { font-weight: 500; font-style: italic; font-size: 27px; letter-spacing: -.01em; }
+.page-title, .cal-title, .every-title, .panel-name, .note-title, .store-card-head h3, .sheet-head h2, .day-dow, .wnum { font-weight: 500; }
+.page-title { font-size: 38px; }
+.day-num { font-weight: 500; font-size: 72px; letter-spacing: -.02em; }
+.day-dow { font-style: italic; }
+.block-h, .lbl, .sub-h, #today-chip, .dow-row, .menu-label { font-family: var(--font-body); letter-spacing: .2em; }
+.page-title, .cal-title, .every-title, .day-num, .wnum, .mnum, .note-title { font-variant-numeric: lining-nums; }

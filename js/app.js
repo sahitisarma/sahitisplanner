@@ -77,8 +77,8 @@ export function applyTheme() {
   p.swatches.forEach((c, i) => r.setProperty(`--s${i}`, c));
   r.setProperty('--accent', p.swatches[0]);
   r.setProperty('--accent2', p.swatches[1]);
-  r.setProperty('--font-display', `'${s.fontDisplay}', 'Shrikhand', Georgia, serif`);
-  r.setProperty('--font-body', `'${s.fontBody}', 'Outfit', system-ui, sans-serif`);
+  r.setProperty('--font-display', `'${s.fontDisplay}', 'Playfair Display', Georgia, serif`);
+  r.setProperty('--font-body', `'${s.fontBody}', 'Inter', system-ui, sans-serif`);
   r.setProperty('--fs', `${s.fontSize}px`);
   document.documentElement.dataset.pattern = p.pattern;
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', p.backdrop[0]);

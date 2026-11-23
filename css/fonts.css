@@ -16,3 +16,8 @@
 @font-face { font-family: 'Kalam'; src: url(../fonts/kalam-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
 @font-face { font-family: 'Gaegu'; src: url(../fonts/gaegu-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Gaegu'; src: url(../fonts/gaegu-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Playfair Display'; src: url(../fonts/playfair-display-latin-wght-normal.woff2) format('woff2'); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: 'Playfair Display'; src: url(../fonts/playfair-display-latin-wght-italic.woff2) format('woff2'); font-weight: 400 900; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Bodoni Moda'; src: url(../fonts/bodoni-moda-latin-wght-normal.woff2) format('woff2'); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: 'Bodoni Moda'; src: url(../fonts/bodoni-moda-latin-wght-italic.woff2) format('woff2'); font-weight: 400 900; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url(../fonts/inter-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; font-display: swap; }
