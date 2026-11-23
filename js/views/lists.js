@@ -1,3 +1,4 @@
+import { icon } from '../icons.js';
 // To-Dos, Errands, custom lists, and To Buy (organized by store).
 import { h, menu, sheet, toast, colorRow, confirmSheet } from '../ui.js';
 import * as store from '../store.js';
@@ -38,7 +39,7 @@ export function renderToBuy(host, sec, { compact = false } = {}) {
   const card = (s) => h('div', { class: 'store-card', style: { '--c': s.color || sec.color } },
     h('div', { class: 'store-card-head' },
       h('h3', {}, s.name),
-      h('button', { class: 'icon-btn sm', 'aria-label': `${s.name} options`, onclick: (e) => storeMenu(e.currentTarget, s) }, '⋯')),
+      h('button', { class: 'icon-btn sm', 'aria-label': `${s.name} options`, onclick: (e) => storeMenu(e.currentTarget, s) }, icon('more'))),
     typedFor(s.id).length ? itemList(typedFor(s.id)) : null,
     checklistPage(`list:tobuy:${s.id}`, { minRows: tab === 'all' ? 7 : 16, label: `${s.name} list` }));
 

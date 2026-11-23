@@ -32,11 +32,11 @@ export function openCapture(initialText = '', fromVoice = null) {
   };
 
   const body = h('div', { class: 'capture' },
-    h('p', { class: 'hint' }, 'Capture now, organize later. Nothing is added until you review it.'),
+    
     ta,
     fromVoice ? null : h('details', {}, h('summary', {}, 'Or write it with your Pencil'), pad),
     fromVoice ? null : rec,
-    h('button', { class: 'btn primary', onclick: run }, '✦ Suggest where things go'),
+    h('button', { class: 'btn primary', onclick: run }, 'Sort it into my planner'),
     results);
   const s = sheet('Quick capture', body, { wide: true });
   setTimeout(() => {
@@ -51,7 +51,7 @@ export function openCapture(initialText = '', fromVoice = null) {
     const keepNote = { on: !voice };
     const draw = () => {
       fill(results, 
-        h('h3', { class: 'block-h' }, 'Suggestions'),
+        h('h3', { class: 'block-h' }, 'Here is where things go'),
         rows.length ? null : h('p', { class: 'empty' }, 'Nothing to suggest.'),
         ...rows.map((r) => {
           const typeSel = h('select', { 'aria-label': 'Type', onchange: (e) => { r.type = e.target.value; draw(); } },
@@ -65,9 +65,9 @@ export function openCapture(initialText = '', fromVoice = null) {
               r.store && !stores.some((st) => st.name.toLowerCase() === r.store.toLowerCase()) ? h('option', { value: r.store, selected: true }, `${r.store} (new store)`) : null) : null,
             r.type !== 'tobuy' ? dateButton(r.date, (d) => { r.date = d; }, { placeholder: 'No date', allowClear: r.type !== 'event' }) : null,
             r.type === 'event' ? h('input', { type: 'time', value: r.time || '', 'aria-label': 'Time', onchange: (e) => { r.time = e.target.value; } }) : null,
-            h('span', { class: 'sugg-raw' }, `“${r.raw}”`));
+            null);
         }),
-        !voice ? h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: keepNote.on, onchange: (e) => { keepNote.on = e.target.checked; } }), h('span', {}, 'Keep the original as a note')) : h('p', { class: 'hint' }, 'The original recording stays in Voice Notes.'),
+        !voice ? h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: keepNote.on, onchange: (e) => { keepNote.on = e.target.checked; } }), h('span', {}, 'Keep the original as a note')) : null,
         h('div', { class: 'row gap' }, h('button', { class: 'btn primary', onclick: () => apply(rows, text, keepNote.on) }, 'Add to planner')));
     };
     draw();

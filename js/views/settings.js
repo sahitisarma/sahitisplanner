@@ -1,3 +1,4 @@
+import { icon } from '../icons.js';
 // Settings: sections, look and feel, handwriting, Google, backup, install help.
 import { h, sheet, toast, colorRow, confirmSheet } from '../ui.js';
 import * as store from '../store.js';
@@ -11,7 +12,7 @@ import { bus } from '../bus.js';
 export function renderSettings(host) {
   const s = model.settings();
   host.append(h('div', { class: 'settings' },
-    h('h2', { class: 'page-title' }, 'Settings ✦'),
+    h('h2', { class: 'page-title' }, 'Settings'),
     sectionsCard(),
     lookCard(s),
     writingCard(s),
@@ -32,22 +33,21 @@ function sectionsCard() {
     secs.forEach((x, k) => { if (k !== i && k !== j && x.order !== k) store.put('sections', { id: x.id, order: k }, { quiet: true }); });
   };
   return card('Sections',
-    h('p', { class: 'hint' }, 'Rename, recolor, reorder, hide, or add sections. Tap the color dot to change it.'),
     h('div', { class: 'sec-rows' }, secs.map((sec, i) => h('div', { class: `sec-row ${sec.hidden ? 'hidden' : ''}` },
       h('button', { class: 'swatch', style: { background: sec.color }, 'aria-label': 'Section color', onclick: () => {
         sheet(`${sec.name} color`, colorRow(pal.swatches, sec.color, (c) => store.put('sections', { id: sec.id, color: c })), { actions: [{ label: 'Done', kind: 'primary' }] });
       } }),
       h('input', { value: sec.name, 'aria-label': 'Section name', onchange: (e) => store.put('sections', { id: sec.id, name: e.target.value.trim() || sec.name }) }),
-      h('span', { class: 'sec-type' }, model.SECTION_TYPES[sec.type]?.label),
-      h('button', { class: 'icon-btn sm', 'aria-label': 'Move up', disabled: i === 0, onclick: () => reorder(i, i - 1) }, '↑'),
-      h('button', { class: 'icon-btn sm', 'aria-label': 'Move down', disabled: i === secs.length - 1, onclick: () => reorder(i, i + 1) }, '↓'),
+      
+      h('button', { class: 'icon-btn sm', 'aria-label': 'Move up', disabled: i === 0, onclick: () => reorder(i, i - 1) }, icon('up', 18)),
+      h('button', { class: 'icon-btn sm', 'aria-label': 'Move down', disabled: i === secs.length - 1, onclick: () => reorder(i, i + 1) }, icon('down', 18)),
       h('button', { class: 'chip', onclick: () => store.put('sections', { id: sec.id, hidden: !sec.hidden }) }, sec.hidden ? 'Show' : 'Hide'),
       sec.custom ? h('button', { class: 'icon-btn sm', 'aria-label': 'Delete section', onclick: async () => {
         if (await confirmSheet('Delete section?', `“${sec.name}” and its items will be removed.`, 'Delete')) {
           store.remove('sections', sec.id);
           store.all('items').filter((it) => it.section === sec.id).forEach((it) => store.remove('items', it.id));
         }
-      } }, '✕') : null))),
+      } }, icon('trash', 18)) : null))),
     h('div', { class: 'row gap wrap' },
       h('button', { class: 'btn sm', onclick: () => addSection('list') }, 'New list'),
       h('button', { class: 'btn sm', onclick: () => addSection('notes') }, 'New notebook')));
@@ -63,7 +63,7 @@ function addSection(type) {
 function lookCard(s) {
   const secs = model.sections({ includeHidden: true }).filter((x) => ['todos', 'errands', 'tobuy', 'list'].includes(x.type));
   return card('Look and feel',
-    h('div', { class: 'menu-label' }, 'Palette (from your inspiration board)'),
+    h('div', { class: 'menu-label' }, 'Palette'),
     h('div', { class: 'palette-row' }, Object.entries(model.PALETTES).map(([id, p]) => h('button', {
       class: `palette ${s.palette === id ? 'on' : ''}`, onclick: () => model.applyPalette(id),
     }, h('span', { class: `pal-swatch pat-${p.pattern}`, style: { '--b1': p.backdrop[0], '--b2': p.backdrop[1], '--b3': p.backdrop[2] || p.backdrop[0], '--b4': p.backdrop[3] || p.backdrop[1] } }),
@@ -100,14 +100,14 @@ function lookCard(s) {
 function writingCard(s) {
   return card('Handwriting',
     h('label', { class: 'toggle' }, h('input', { type: 'checkbox', checked: !!s.fingerDraw, onchange: (e) => { model.saveSettings({ fingerDraw: e.target.checked }); Pen.set({ fingerDraw: e.target.checked }); } }),
-      h('span', {}, 'Let fingers draw too (off = Pencil writes, fingers scroll)')),
+      h('span', {}, 'Let fingers draw too')),
     h('div', { class: 'menu-label' }, 'Favorite colors'),
     colorRow(s.favColors, null, (c) => {
       const fav = model.settings().favColors;
       if (fav.includes(c)) model.saveSettings({ favColors: fav.filter((x) => x !== c) });
       else model.saveSettings({ favColors: [...fav, c].slice(-10) });
     }),
-    h('p', { class: 'hint' }, 'Tap a favorite to remove it. Use ＋ to add a new one. Pen presets live in the pen dock: set a pen up, then choose “Save as pen preset”.'));
+    h('p', { class: 'hint' }, 'Tap a color to remove it.'));
 }
 
 // ---------- Google ----------
@@ -127,14 +127,13 @@ function googleCard(s) {
   };
   return card('Google Calendar and Tasks',
     connected
-      ? h('p', { class: 'ok' }, always ? `✓ Always connected${G.email() ? ` as ${G.email()}` : ''}` : `✓ Connected${G.email() ? ` as ${G.email()}` : ''} (renews when you open the app)`)
-      : h('p', { class: 'hint' }, 'Connect once to sync Google Calendar, Google Tasks, and keep the planner the same on your iPad and computer.'),
-    h('label', {}, 'Connection server (keeps Google always connected)', serverInput),
-    h('p', { class: 'hint' }, 'Your free Cloudflare server from the README. With it, Google stays connected for good. Without it, Google access lasts about an hour and renews when you open the app.'),
+      ? h('p', { class: 'ok' }, `${always ? 'Always connected' : 'Connected'}${G.email() ? ` as ${G.email()}` : ''}`)
+      : null,
+    h('label', {}, 'Connection server', serverInput),
     h('details', { class: 'advanced' },
       h('summary', {}, 'No server? Use a client ID instead'),
       h('label', {}, 'OAuth client ID', idInput),
-      h('p', { class: 'hint' }, `JavaScript origin to add in Google Cloud: ${location.origin}`)),
+      null),
     h('div', { class: 'row gap wrap' },
       h('button', { class: 'btn primary', onclick: connect }, connected ? 'Reconnect Google' : 'Connect Google'),
       connected ? h('button', { class: 'btn', onclick: () => sync.soon(0) }, 'Sync now') : null,
@@ -152,7 +151,7 @@ function googleCard(s) {
 // ---------- data ----------
 function dataCard() {
   return card('Backup',
-    h('p', { class: 'hint' }, 'Everything saves automatically. A backup file is extra peace of mind.'),
+
     h('div', { class: 'row gap wrap' },
       h('button', { class: 'btn', onclick: exportData }, 'Download backup'),
       h('label', { class: 'btn' }, 'Restore backup', h('input', { type: 'file', accept: 'application/json', hidden: true, onchange: (e) => importData(e.target.files[0]) }))));
@@ -188,5 +187,5 @@ function installCard() {
       h('li', {}, 'Open this planner’s link in Safari on your iPad.'),
       h('li', {}, 'Tap the Share button (square with an arrow).'),
       h('li', {}, 'Choose “Add to Home Screen”, keep the name “Sahiti’s Planner”, tap Add.'),
-      h('li', {}, 'Open it from the new icon. It opens full screen and remembers everything.')));
+      h('li', {}, 'Open it from the new icon.')));
 }

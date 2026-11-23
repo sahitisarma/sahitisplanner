@@ -1,5 +1,6 @@
+import { icon } from '../icons.js';
 // Calendar: month, week and day (daily planning page). Weeks always start Sunday.
-import { h, sheet, menu, dateButton, toast, confirmSheet, fill } from '../ui.js';
+import { h, sheet, menu, closeMenu, dateButton, toast, confirmSheet, fill } from '../ui.js';
 import * as D from '../dates.js';
 import * as E from '../events.js';
 import * as model from '../model.js';
@@ -18,17 +19,17 @@ export function renderCalendar(host, { compact = false } = {}) {
   const view = calState.view;
   const wrap = h('div', { class: `cal cal-${view} ${compact ? 'compact' : ''}` });
   const title = view === 'month' ? D.fmtMonth(calState.day)
-    : view === 'week' ? weekTitle(calState.day) : D.fmtFull(calState.day);
+    : view === 'week' ? weekTitle(calState.day) : D.fmtMonth(calState.day);
   const step = (n) => {
     calState.day = view === 'month' ? D.addMonths(calState.day, n) : D.addDays(calState.day, n * (view === 'week' ? 7 : 1));
     bus.rerender();
   };
   wrap.append(h('div', { class: 'cal-head' },
-    h('h2', { class: 'cal-title' }, title),
+    h('h2', { class: 'cal-title' }, h('button', { class: 'cal-title-btn', 'aria-label': 'Choose a month', onclick: (e) => monthPicker(e.currentTarget) }, title, icon('down', 18))),
     h('div', { class: 'cal-nav' },
-      h('button', { class: 'icon-btn', 'aria-label': 'Previous', onclick: () => step(-1) }, '‹'),
+      h('button', { class: 'icon-btn', 'aria-label': 'Previous', onclick: () => step(-1) }, icon('left')),
       h('button', { class: 'chip', onclick: () => { calState.day = D.todayKey(); bus.rerender(); } }, 'Today'),
-      h('button', { class: 'icon-btn', 'aria-label': 'Next', onclick: () => step(1) }, '›')),
+      h('button', { class: 'icon-btn', 'aria-label': 'Next', onclick: () => step(1) }, icon('right'))),
     h('div', { class: 'seg', role: 'tablist' }, ['month', 'week', 'day'].map((v) =>
       h('button', { class: view === v ? 'on' : '', role: 'tab', 'aria-selected': String(view === v), onclick: () => { calState.view = v; saveCal(); bus.rerender(); } }, v[0].toUpperCase() + v.slice(1)))),
     h('button', { class: 'chip', title: 'Show or hide calendars', onclick: (e) => calendarsMenu(e.currentTarget) }, 'Calendars'),
@@ -91,8 +92,8 @@ function monthView(k) {
       },
       h('span', { class: 'mnum' }, String(ds.getDate())),
       h('div', { class: 'mevents' }, evs.slice(0, 3).map((o) => eventChip(o, { day })),
-        evs.length > 3 ? h('span', { class: 'more' }, `+${evs.length - 3} more`) : null),
-      tasks.length ? h('span', { class: 'mtasks', title: `${tasks.length} open items` }, `☐ ${tasks.length}`) : null);
+        evs.length > 3 ? h('span', { class: 'more' }, `${evs.length - 3} more`) : null),
+      null);
       return cell;
     }));
   const wrap = h('div', { class: 'month' },
@@ -127,14 +128,14 @@ function dayAgenda(day) {
   const voices = store.all('voice').filter((v) => v.link?.date === day);
   return h('div', { class: 'agenda' },
     h('h3', { class: 'agenda-h' }, 'Schedule'),
-    evs.length ? h('div', { class: 'agenda-events' }, evs.map((o) => eventChip(o))) : h('p', { class: 'empty' }, 'No events.'),
+    evs.length ? h('div', { class: 'agenda-events' }, evs.map((o) => eventChip(o))) : h('p', { class: 'empty' }, 'No events'),
     lists.map((sec) => {
       const items = model.itemsForDay(sec.id, day);
       return h('div', {}, h('h3', { class: 'agenda-h', style: { '--c': sec.color } }, sec.name),
-        itemList(items, { day, empty: 'Nothing typed for this day.', showStore: sec.type === 'tobuy' }));
+        itemList(items, { day, empty: '', showStore: sec.type === 'tobuy' }));
     }),
-    notes.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Notes'), notes.map((n) => h('button', { class: 'link-row', onclick: () => bus.navigate(`notes/${n.id}`) }, `✎ ${n.title || 'Untitled note'}`))) : null,
-    voices.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Voice notes'), voices.map((v) => h('button', { class: 'link-row', onclick: () => bus.navigate('voice') }, `◉ ${v.transcript?.slice(0, 60) || 'Recording'}`))) : null,
+    notes.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Notes'), notes.map((n) => h('button', { class: 'link-row', onclick: () => bus.navigate(`notes/${n.id}`) }, n.title || 'Untitled note'))) : null,
+    voices.length ? h('div', {}, h('h3', { class: 'agenda-h' }, 'Voice notes'), voices.map((v) => h('button', { class: 'link-row', onclick: () => bus.navigate('voice') }, v.transcript?.slice(0, 60) || 'Recording'))) : null,
   );
 }
 
@@ -198,8 +199,7 @@ export function dayPage(day, { compact = false } = {}) {
     h('div', { class: 'page left' },
       h('div', { class: 'day-hero' },
         h('span', { class: 'day-num' }, String(ds.getDate())),
-        h('div', {}, h('div', { class: 'day-dow' }, ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][ds.getDay()]),
-          h('div', { class: 'day-month' }, D.fmtMonth(day)))),
+        h('div', { class: 'day-dow' }, ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][ds.getDay()])),
       h('h3', { class: 'block-h' }, 'Schedule'),
       allDay.length ? h('div', { class: 'allday-row' }, allDay.map((o) => eventChip(o))) : null,
       timeline),
@@ -221,7 +221,7 @@ function voiceForDay(day) {
   const v = store.all('voice').filter((x) => x.link?.date === day);
   if (!v.length) return null;
   return h('div', { class: 'card' }, h('h3', { class: 'block-h' }, 'Voice notes'),
-    v.map((x) => h('button', { class: 'link-row', onclick: () => bus.navigate('voice') }, `◉ ${x.transcript?.slice(0, 80) || 'Recording'}`)));
+    v.map((x) => h('button', { class: 'link-row', onclick: () => bus.navigate('voice') }, x.transcript?.slice(0, 80) || 'Recording')));
 }
 
 function nowLine(day, startHr, nHours) {
@@ -342,7 +342,7 @@ export function openEventEditor(o, defaults = {}) {
     repeat,
     h('label', {}, 'Location', h('input', { value: f.location, placeholder: 'Add a place', oninput: (e) => { f.location = e.target.value; } })),
     h('label', {}, 'Description', h('textarea', { rows: 3, placeholder: 'Notes for this event', oninput: (e) => { f.description = e.target.value; } }, f.description)),
-    task ? h('div', { class: 'linked-task' }, '☑ Time block for: ', h('b', {}, task.title || 'handwritten task'),
+    task ? h('div', { class: 'linked-task' }, 'Time block for ', h('b', {}, task.title || 'a handwritten task'),
       h('button', { class: 'chip', onclick: () => { model.setDone(task, !task.done); toast(task.done ? 'Task reopened' : 'Task done'); } }, task.done ? 'Reopen task' : 'Mark task done')) : null,
     ev?.htmlLink ? h('a', { class: 'small-link', href: ev.htmlLink, target: '_blank', rel: 'noopener' }, 'Open in Google Calendar') : null,
   );
@@ -415,4 +415,25 @@ export function timeBlock(item) {
     if (ev) return openEventEditor({ ev, start: E.evStart(ev), end: E.evEnd(ev) });
   }
   openEventEditor(null, { day: item.date || D.todayKey(), summary: item.title || 'Focus time', taskId: item.id });
+}
+
+// Tap the month name to jump to any month
+function monthPicker(anchor) {
+  let year = D.parseKey(calState.day).getFullYear();
+  const curY = D.parseKey(calState.day).getFullYear(), curM = D.parseKey(calState.day).getMonth();
+  const today = new Date();
+  const box = h('div', { class: 'month-picker' });
+  const draw = () => {
+    box.replaceChildren(
+      h('div', { class: 'mp-head' },
+        h('button', { class: 'icon-btn sm', 'aria-label': 'Previous year', onclick: () => { year--; draw(); } }, icon('left', 18)),
+        h('span', { class: 'mp-year' }, String(year)),
+        h('button', { class: 'icon-btn sm', 'aria-label': 'Next year', onclick: () => { year++; draw(); } }, icon('right', 18))),
+      h('div', { class: 'mp-grid' }, D.MONTHS.map((m, i) => h('button', {
+        class: ['mp-month', year === curY && i === curM ? 'on' : '', year === today.getFullYear() && i === today.getMonth() ? 'now' : ''].join(' '),
+        onclick: () => { calState.day = D.key(new Date(year, i, 1)); calState.view = 'month'; saveCal(); closeMenu(); bus.rerender(); },
+      }, m.slice(0, 3)))));
+  };
+  draw();
+  menu(anchor, [{ el: box }]);
 }

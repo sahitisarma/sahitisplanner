@@ -1,3 +1,4 @@
+import { icon } from '../icons.js';
 // The Everything view: an open planner spread. Calendar on one page, lists and
 // notes on the other. Panels resize, move, collapse, and open in a bigger view.
 import { h, menu } from '../ui.js';
@@ -25,7 +26,7 @@ export function renderEverything(host) {
 
   host.append(h('div', { class: 'everything-wrap' },
     h('div', { class: 'everything-bar' },
-      h('h2', { class: 'every-title' }, 'Everything'),
+      h('h2', { class: 'every-title' }, 'Dashboard'),
       unused.length ? h('button', { class: 'chip', onclick: (e) => menu(e.currentTarget, unused.map((s) => ({
         label: `Add ${s.name}`, run: () => model.saveLayout({ right: [...model.layout().right, s.id] }),
       }))) }, 'Add section') : null,
@@ -41,10 +42,10 @@ function panel(id, side, idx, count, L) {
   if (!collapsed) renderSection(body, sec, { compact: true });
   const el = h('section', { class: `panel ${collapsed ? 'collapsed' : ''}`, style: { '--c': sec.color, flexGrow: collapsed ? 0 : grow }, 'data-id': id },
     h('header', { class: 'panel-head' },
-      h('button', { class: 'panel-name', onclick: () => toggle(id) , 'aria-expanded': String(!collapsed) }, h('span', { class: 'caret' }, collapsed ? '▸' : '▾'), sec.name),
+      h('button', { class: 'panel-name', onclick: () => toggle(id) , 'aria-expanded': String(!collapsed) }, sec.name, h('span', { class: 'caret' }, icon(collapsed ? 'right' : 'down', 16))),
       h('div', { class: 'panel-tools' },
-        h('button', { class: 'icon-btn sm', title: 'Open larger', 'aria-label': `Open ${sec.name}`, onclick: () => bus.navigate(id) }, '⤢'),
-        h('button', { class: 'icon-btn sm', title: 'Arrange', 'aria-label': `Arrange ${sec.name}`, onclick: (e) => arrangeMenu(e.currentTarget, id, side, idx, count) }, '⋯'))),
+        h('button', { class: 'icon-btn sm', title: 'Open larger', 'aria-label': `Open ${sec.name}`, onclick: () => bus.navigate(id) }, icon('expand', 18)),
+        h('button', { class: 'icon-btn sm', title: 'Arrange', 'aria-label': `Arrange ${sec.name}`, onclick: (e) => arrangeMenu(e.currentTarget, id, side, idx, count) }, icon('more')))),
     body);
   if (!collapsed && idx < count - 1) {
     const handle = h('div', { class: 'panel-resize', role: 'separator', 'aria-label': 'Drag to resize' });
@@ -71,7 +72,7 @@ function arrangeMenu(anchor, id, side, idx, count) {
     { label: 'Make smaller', icon: '↕', run: () => model.saveLayout({ sizes: { ...L.sizes, [id]: Math.max(0.4, (L.sizes[id] || 1) - 0.4) } }) },
     { label: L.collapsed[id] ? 'Expand' : 'Collapse', icon: '▾', run: () => toggle(id) },
     '-',
-    { label: 'Remove from Everything', icon: '✕', run: () => move((n) => { n[side] = n[side].filter((x) => x !== id); }) },
+    { label: 'Remove from Dashboard', icon: '✕', run: () => move((n) => { n[side] = n[side].filter((x) => x !== id); }) },
   ]);
 }
 

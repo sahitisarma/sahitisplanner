@@ -85,5 +85,5 @@ export function colorMixer(value, onChange) {
   } }, label);
   tabs.append(tab('Hue', 'hsv'), tab('RGB', 'rgb'));
   tabs.firstChild.classList.add('on');
-  return h('div', { class: 'mixer' }, h('div', { class: 'mix-top' }, preview, hex, tabs), hsvBox, rgbBox);
+  return h('div', { class: 'mixer' }, h('div', { class: 'mix-top' }, preview, tabs), hsvBox, rgbBox);
 }

@@ -40,7 +40,14 @@ function openDB() {
 }
 
 export async function init() {
-  db = await openDB();
+  try {
+    db = await Promise.race([openDB(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2500))]);
+  } catch (e) {
+    // Storage blocked (for example inside a preview frame): keep working in memory.
+    console.warn('Saving is unavailable here; working in memory.', e);
+    db = null;
+    return;
+  }
   await new Promise((resolve, reject) => {
     const tx = db.transaction('records', 'readonly');
     const req = tx.objectStore('records').openCursor();
@@ -121,7 +128,8 @@ function queueWrite(col, rec) {
 
 export function flushNow() {
   clearTimeout(flushTimer);
-  if (!db || !pending.size) { if (status.save === 'saving') setStatus({ save: 'saved' }); return Promise.resolve(); }
+  if (!db) { pending.clear(); if (status.save === 'saving') setStatus({ save: 'saved' }); return Promise.resolve(); }
+  if (!pending.size) { if (status.save === 'saving') setStatus({ save: 'saved' }); return Promise.resolve(); }
   const batch = [...pending.entries()];
   pending.clear();
   return new Promise((resolve) => {
@@ -140,7 +148,9 @@ export function flushNow() {
 }
 
 // ---------- blobs (voice audio) ----------
+const memBlobs = new Map();
 export function putBlob(id, blob) {
+  if (!db) { memBlobs.set(id, blob); return Promise.resolve(); }
   return new Promise((resolve, reject) => {
     const tx = db.transaction('blobs', 'readwrite');
     tx.objectStore('blobs').put(blob, id);
@@ -149,6 +159,7 @@ export function putBlob(id, blob) {
   });
 }
 export function getBlob(id) {
+  if (!db) return Promise.resolve(memBlobs.get(id) || null);
   return new Promise((resolve) => {
     const tx = db.transaction('blobs', 'readonly');
     const req = tx.objectStore('blobs').get(id);

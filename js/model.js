@@ -6,7 +6,7 @@ import { todayKey, diffDays } from './dates.js';
 export const PALETTES = {
   winner: {
     name: 'Winner', pattern: 'stripes',
-    paper: '#FDF9F5', ink: '#3A1C22', line: '#F2E4E1', backdrop: ['#F3C3CF', '#FCEEF1'],
+    paper: '#FDF9F5', ink: '#3A1C22', line: '#F2E4E1', fill: '#F6ECE9', card: '#FFFFFF', muted: '#8B7074', backdrop: ['#F7D9E0', '#FDF2F4'],
     swatches: ['#C0283A', '#7A1F2E', '#E58FA5', '#B8868F', '#3A1C22', '#5B6C8F', '#D8B4A0', '#9A9693'],
     sections: { calendar: '#7A1F2E', todos: '#C0283A', errands: '#B8868F', tobuy: '#E58FA5', notes: '#D97F95', voice: '#A8506A' },
   },

@@ -68,7 +68,7 @@ export function fmtTime(date) {
   let h = date.getHours(); const m = date.getMinutes();
   const ap = h >= 12 ? 'pm' : 'am';
   h = h % 12 || 12;
-  return m ? `${h}:${pad(m)}${ap}` : `${h}${ap}`;
+  return m ? `${h}:${pad(m)} ${ap}` : `${h} ${ap}`;
 }
 export function relLabel(k) {
   const t = todayKey();

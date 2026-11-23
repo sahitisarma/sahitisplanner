@@ -1,3 +1,4 @@
+import { icon } from '../icons.js';
 // Task-style items shared by To-Dos, Errands, To Buy and custom lists.
 // Items can be typed or handwritten; both get real checkboxes.
 import { h, menu, pickDate, sheet, toast, colorRow, debounce, confirmSheet } from '../ui.js';
@@ -19,7 +20,7 @@ export function styleVars(style = {}, base = {}) {
   if (s.b) css.fontWeight = '700';
   if (s.i) css.fontStyle = 'italic';
   if (s.u) css.textDecoration = 'underline';
-  if (s.hl) css.background = `linear-gradient(transparent 55%, ${s.hl}88 55%)`;
+  if (s.hl) css.backgroundColor = s.hl;
   return css;
 }
 
@@ -66,21 +67,18 @@ export function itemRow(item, ctx = {}) {
     content = input;
   }
 
-  const metas = h('div', { class: 'item-meta' },
-    carried ? h('span', { class: 'badge carry', title: `Carried forward from ${fmtShort(item.date)}` }, `↻ ${carried}d`) : null,
-    item.priority ? h('span', { class: `badge pri p${item.priority}`, title: `${PRIORITY[item.priority]} priority` }, '!'.repeat(item.priority)) : null,
-    item.due ? h('span', { class: `badge due ${overdue ? 'overdue' : ''}`, title: overdue ? 'Overdue' : 'Due' }, `${overdue ? 'Overdue ' : 'Due '}${relLabel(item.due)}`) : null,
-    !ctx.day && item.date ? h('span', { class: 'badge date' }, relLabel(item.date)) : null,
-    ctx.showSection ? h('span', { class: 'badge sec', style: { '--c': model.section(item.section)?.color } }, model.section(item.section)?.name) : null,
-    ctx.showStore && item.store ? h('span', { class: 'badge sec' }, store.get('stores', item.store)?.name) : null,
-    item.rollover === false ? h('span', { class: 'badge muted', title: 'Rollover off' }, '⇥') : null,
-    item.eventLink ? h('span', { class: 'badge muted', title: 'Time blocked on calendar' }, '◷') : null,
-    item.g ? h('span', { class: 'badge g', title: 'Linked to Google Tasks' }, 'G') : null,
-    kids.length ? h('span', { class: 'badge muted' }, `${kids.filter((k) => k.done).length}/${kids.length}`) : null,
-  );
+  // Small plain-text notes under the item (no tags or pills)
+  const notes = [
+    carried ? `from ${fmtShort(item.date)}` : '',
+    item.priority === 3 ? 'High priority' : item.priority === 2 ? 'Medium priority' : '',
+    item.due ? (overdue ? `Overdue since ${relLabel(item.due)}` : `Due ${relLabel(item.due).toLowerCase()}`) : '',
+    !ctx.day && item.date ? relLabel(item.date) : '',
+    kids.length ? `${kids.filter((k) => k.done).length} of ${kids.length} done` : '',
+  ].filter(Boolean);
+  const metas = h('div', { class: `item-meta ${overdue ? 'overdue' : ''}` }, notes.join('   '));
 
-  const more = h('button', { class: 'icon-btn sm more', 'aria-label': 'Item options', onclick: (e) => { e.stopPropagation(); itemMenu(e.currentTarget, item); } }, '⋯');
-  const handle = h('span', { class: 'drag', 'aria-hidden': 'true' }, '⋮⋮');
+  const more = h('button', { class: 'icon-btn sm more', 'aria-label': 'Item options', onclick: (e) => { e.stopPropagation(); itemMenu(e.currentTarget, item); } }, icon('more'));
+  const handle = h('span', { class: 'drag', 'aria-hidden': 'true' });
 
   const row = h('div', { class: `item ${item.done ? 'done' : ''} ${item.parentId ? 'sub' : ''}`, 'data-id': item.id },
     handle, check, h('div', { class: 'item-body' }, content, metas), more);
@@ -223,7 +221,7 @@ export function composer({ section, date = null, storeId = null, placeholder = '
   };
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
   const pad = h('div', { class: 'composer-pad paper-lined' });
-  const hint = h('span', { class: 'pad-hint' }, '✎ write here with your Pencil');
+  const hint = h('span', { class: 'pad-hint' }, '');
   pad.append(hint);
   let timer;
   const commitInk = () => {
@@ -255,6 +253,6 @@ export function refreshInk(id) {
 }
 
 export function itemList(items, ctx = {}) {
-  return h('div', { class: 'items' }, items.length ? items.map((i) => itemRow(i, ctx)) : h('p', { class: 'empty' }, ctx.empty || 'Nothing here yet.'));
+  return h('div', { class: 'items' }, items.length ? items.map((i) => itemRow(i, ctx)) : (ctx.empty ? h('p', { class: 'empty' }, ctx.empty) : null));
 }
 export { todayKey };

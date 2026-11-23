@@ -12,6 +12,7 @@ export const Pen = {
   tool: 'pen', // pen | hl | eraser | select
   color: '#2B2320',
   w: 2.2,
+  ew: 14, // eraser size (logical units)
   fingerDraw: false,
   set(patch) { Object.assign(this, patch); penListeners.forEach((f) => f(this)); },
   on(f) { penListeners.add(f); return () => penListeners.delete(f); },
@@ -260,6 +261,7 @@ export class InkSurface {
       this.cur.stroke = { id: sid(), tool, color: Pen.color, w: tool === 'hl' ? Math.max(8, Pen.w) : Pen.w, pts: [r1(x), r1(y), r1(e.pressure || 0.5)] };
     } else if (tool === 'eraser') {
       this.cur.erased = false;
+      this.cur.ex = x; this.cur.ey = y;
       this.eraseAt(x, y);
     } else if (tool === 'select') {
       this.clearSelection();
@@ -281,7 +283,12 @@ export class InkSurface {
         if (Math.hypot(x - lx, y - ly) < 0.6) continue;
         p.push(r1(x), r1(y), r1(ev.pressure || 0.5));
       } else if (c.tool === 'eraser') {
-        this.eraseAt(x, y);
+        // fill in the path between samples so fast rubs don't skip
+        const step = Math.max(2, Pen.ew / 3);
+        const d = Math.hypot(x - c.ex, y - c.ey);
+        const n = Math.max(1, Math.ceil(d / step));
+        for (let k = 1; k <= n; k++) this.eraseAt(c.ex + ((x - c.ex) * k) / n, c.ey + ((y - c.ey) * k) / n);
+        c.ex = x; c.ey = y;
       } else if (c.poly) {
         c.poly.push(x, y);
       }
@@ -305,6 +312,15 @@ export class InkSurface {
     const c = this.cur;
     if (!c) return;
     if (c.stroke) drawStroke(lctx, c.stroke, this.scale);
+    if (c.tool === 'eraser' && c.ex != null) {
+      lctx.save();
+      lctx.strokeStyle = 'rgba(58,28,34,.45)';
+      lctx.lineWidth = 1;
+      lctx.beginPath();
+      lctx.arc(c.ex * this.scale, c.ey * this.scale, (Pen.ew / 2) * this.scale, 0, Math.PI * 2);
+      lctx.stroke();
+      lctx.restore();
+    }
     if (c.poly && c.poly.length > 2) {
       lctx.save();
       lctx.setLineDash([6, 5]);
@@ -360,16 +376,44 @@ export class InkSurface {
     this.opts.onChange?.(this.strokes, { loud: !this.host.isConnected });
   }
 
+  // Pixel eraser: removes only the ink under the eraser, splitting strokes.
   eraseAt(x, y) {
-    const r = Math.max(8, Pen.w * 3);
-    const before = this.strokes.length;
-    this.strokes = this.strokes.filter((s) => {
+    const r = Pen.ew / 2;
+    let changed = false;
+    const out = [];
+    for (const s of this.strokes) {
+      const reach = r + s.w * 0.4;
+      // quick reject by bounding box
+      let near = false;
       for (let i = 0; i < s.pts.length; i += 3) {
-        if (Math.hypot(s.pts[i] - x, s.pts[i + 1] - y) < r + s.w / 2) return false;
+        if (Math.abs(s.pts[i] - x) < reach + 30 && Math.abs(s.pts[i + 1] - y) < reach + 30) { near = true; break; }
       }
-      return true;
-    });
-    if (this.strokes.length !== before) { this.cur.erased = true; this.redraw(); }
+      if (!near) { out.push(s); continue; }
+      // make the stroke dense enough that the eraser can cut between far-apart points
+      const pts = [];
+      const p = s.pts;
+      for (let i = 0; i < p.length; i += 3) {
+        if (i > 0) {
+          const dx = p[i] - p[i - 3], dy = p[i + 1] - p[i - 2];
+          const gap = Math.hypot(dx, dy);
+          const n = Math.floor(gap / Math.max(1, r / 2));
+          for (let k = 1; k < n; k++) pts.push(p[i - 3] + (dx * k) / n, p[i - 2] + (dy * k) / n, p[i + 2]);
+        }
+        pts.push(p[i], p[i + 1], p[i + 2]);
+      }
+      let run = [];
+      const runs = [];
+      let hit = false;
+      for (let i = 0; i < pts.length; i += 3) {
+        if (Math.hypot(pts[i] - x, pts[i + 1] - y) < reach) { hit = true; if (run.length) runs.push(run); run = []; }
+        else run.push(r1(pts[i]), r1(pts[i + 1]), pts[i + 2]);
+      }
+      if (run.length) runs.push(run);
+      if (!hit) { out.push(s); continue; }
+      changed = true;
+      for (const rn of runs) if (rn.length >= 6) out.push({ ...s, id: sid(), pts: rn });
+    }
+    if (changed) { this.strokes = out; this.cur.erased = true; this.redraw(); }
   }
 
   // ----- selection -----

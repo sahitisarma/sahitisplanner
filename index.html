@@ -18,6 +18,16 @@
 </head>
 <body>
   <noscript>Sahiti’s Planner needs JavaScript turned on.</noscript>
+  <script>
+    // If this browser blocks storage (private mode, preview frames), use memory so the planner still runs.
+    (function () {
+      function mem() { var d = {}; return { getItem: function (k) { return k in d ? d[k] : null; }, setItem: function (k, v) { d[k] = String(v); }, removeItem: function (k) { delete d[k]; }, clear: function () { d = {}; }, key: function (i) { return Object.keys(d)[i] || null; }, get length() { return Object.keys(d).length; } }; }
+      ['localStorage', 'sessionStorage'].forEach(function (name) {
+        try { window[name].setItem('__sp', '1'); window[name].removeItem('__sp'); }
+        catch (e) { try { Object.defineProperty(window, name, { value: mem(), configurable: true }); } catch (e2) {} }
+      });
+    })();
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

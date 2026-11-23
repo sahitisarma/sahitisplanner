@@ -1,3 +1,4 @@
+import { icon } from './icons.js';
 // Small DOM helpers + shared UI pieces (sheets, menus, toasts, Sunday-first date picker).
 import { monthGrid, DOW_LETTER, fmtMonth, addMonths, todayKey, sameMonth, startOfMonth, relLabel } from './dates.js';
 
@@ -44,7 +45,7 @@ export function sheet(title, body, { actions = [], wide = false, onClose } = {})
     h('div', { class: `sheet${wide ? ' wide' : ''}`, role: 'dialog', 'aria-label': title },
       h('div', { class: 'sheet-head' },
         h('h2', {}, title),
-        h('button', { class: 'icon-btn', 'aria-label': 'Close', onclick: close }, '✕')),
+        h('button', { class: 'icon-btn', 'aria-label': 'Close', onclick: close }, icon('close'))),
       h('div', { class: 'sheet-body' }, body),
       actions.length ? h('div', { class: 'sheet-actions' }, actions.map((a) =>
         h('button', { class: `btn ${a.kind || ''}`, onclick: async () => { const r = await a.run?.(); if (r !== false) close(); } }, a.label))) : null));
@@ -73,7 +74,7 @@ export function menu(anchor, items) {
     it === '-' ? h('hr') :
       it.el ? it.el :
         h('button', { class: `menu-item ${it.danger ? 'danger' : ''}`, onclick: () => { closeMenu(); it.run(); } },
-          it.icon ? h('span', { class: 'mi-icon' }, it.icon) : null, it.label)));
+          it.label)));
   document.body.append(m);
   const mw = m.offsetWidth, mh = m.offsetHeight;
   let left = Math.min(r.left, innerWidth - mw - 8);
@@ -99,9 +100,9 @@ export function miniCalendar({ value, month, onPick, marks = () => false, compac
   const draw = () => {
     fill(root, 
       h('div', { class: 'minical-head' },
-        h('button', { class: 'icon-btn sm', 'aria-label': 'Previous month', onclick: () => { cur = addMonths(cur, -1); draw(); } }, '‹'),
+        h('button', { class: 'icon-btn sm', 'aria-label': 'Previous month', onclick: () => { cur = addMonths(cur, -1); draw(); } }, icon('left', 18)),
         h('span', {}, fmtMonth(cur)),
-        h('button', { class: 'icon-btn sm', 'aria-label': 'Next month', onclick: () => { cur = addMonths(cur, 1); draw(); } }, '›')),
+        h('button', { class: 'icon-btn sm', 'aria-label': 'Next month', onclick: () => { cur = addMonths(cur, 1); draw(); } }, icon('right', 18))),
       h('div', { class: 'minical-grid' },
         DOW_LETTER.map((d) => h('span', { class: 'dow' }, d)),
         monthGrid(cur).map((k) => h('button', {
@@ -154,7 +155,7 @@ export function colorRow(colors, value, onPick, { custom = true } = {}) {
         sheet('Mix a color', colorMixer(picked, (c) => { picked = c; }), {
           actions: [{ label: 'Cancel' }, { label: 'Use color', kind: 'primary', run: () => { value = picked; onPick(picked); draw(); } }],
         });
-      } }));
+      } }, icon('sliders', 18)));
   };
   draw();
   return row;

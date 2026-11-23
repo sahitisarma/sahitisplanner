@@ -94,7 +94,7 @@ export function carriedLines(prefix, day, { lookback = 30 } = {}) {
   }
   if (!out.length) return null;
   const list = h('div', { class: 'carried' },
-    h('div', { class: 'carried-h' }, `Still open from earlier · ${out.length}`),
+    h('div', { class: 'carried-h' }, 'From earlier days'),
     out.map(({ id, r, d, rec }) => {
       const strokes = rec.strokes.filter((s) => rowOfStroke(s) === r).map((s) => ({ ...s, pts: s.pts.map((v, k) => (k % 3 === 1 ? v - (TOP + r * ROW) : v)) }));
       const line = h('div', { class: 'carried-line' },

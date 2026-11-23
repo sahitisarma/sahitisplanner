@@ -80,7 +80,7 @@ The settings card then says **Always connected**. While the planner is open, it 
 - **Lasso** handwriting to move it, resize it, recolor it, delete it, or turn it into text.
 - **To-Dos and Errands**: type in the line, or just write in the pad below it. When you pause, your handwriting becomes an item with a working checkbox.
 - **Rollover**: unfinished items planned for an earlier day show up today automatically, marked ↻. It's the same item, never a copy. Turn rollover off per item with ⋯.
-- **Everything** is the open-planner spread. Drag the spine to resize the pages, drag the bar under a panel to resize it, and use ⋯ to move or collapse panels. Your layout is remembered.
+- **Dashboard** is the open-planner spread. Drag the spine to resize the pages, drag the bar under a panel to resize it, and use ⋯ to move or collapse panels. Your layout is remembered.
 - **Status pill** (top right): Saving, Saved, Syncing, or Needs attention. Tap it for details.
 - **On a computer**: ⌘Z / ⌘⇧Z undo and redo handwriting, and ⌘K opens quick capture.
 

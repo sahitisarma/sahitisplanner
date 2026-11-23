@@ -103,13 +103,13 @@ function voiceCard(v) {
   };
   queueMicrotask(load);
   const save = debounce((t) => store.put('voice', { id: v.id, transcript: t }, { quiet: true }), 500);
-  const linkLabel = v.link?.date ? `◷ ${D.relLabel(v.link.date)}` : v.link?.itemId ? `☑ ${store.get('items', v.link.itemId)?.title || 'Task'}` : v.link?.section ? `▤ ${model.section(v.link.section)?.name}` : 'Link…';
+  const linkLabel = v.link?.date ? D.relLabel(v.link.date) : v.link?.itemId ? (store.get('items', v.link.itemId)?.title || 'Task') : v.link?.section ? model.section(v.link.section)?.name : 'Link…';
   return h('div', { class: 'voice-card' },
     h('div', { class: 'voice-head' },
       h('span', { class: 'voice-when' }, `${D.fmtLong(D.key(new Date(v.createdAt)))} · ${D.fmtTime(new Date(v.createdAt))} · ${Math.floor(v.duration / 60)}:${String(v.duration % 60).padStart(2, '0')}`),
       h('button', { class: 'chip', onclick: (e) => linkMenu(e.currentTarget, v) }, linkLabel),
-      h('button', { class: 'chip accent', onclick: () => bus.capture?.(v.transcript, v) }, '✦ Organize'),
-      h('button', { class: 'icon-btn sm', 'aria-label': 'Delete recording', onclick: async () => { if (await confirmSheet('Delete recording?', 'The audio and transcript will be removed.', 'Delete')) store.remove('voice', v.id); } }, '✕')),
+      h('button', { class: 'chip accent', onclick: () => bus.capture?.(v.transcript, v) }, 'Organize'),
+      h('button', { class: 'icon-btn sm', 'aria-label': 'Delete recording', onclick: async () => { if (await confirmSheet('Delete recording?', 'The audio and transcript will be removed.', 'Delete')) store.remove('voice', v.id); } }, 'Delete')),
     audio,
     h('textarea', { class: 'transcript', 'data-fk': `tr:${v.id}`, rows: 2, placeholder: 'Transcript (you can edit or type it)', oninput: (e) => save(e.target.value), onblur: (e) => save.flush(e.target.value) }, v.transcript || ''));
 }

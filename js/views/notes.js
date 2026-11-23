@@ -1,3 +1,4 @@
+import { icon } from '../icons.js';
 // Notes: freeform pages. Handwriting first, with an optional typed area.
 import { h, menu, debounce, confirmSheet, dateButton, toast, colorRow } from '../ui.js';
 import * as store from '../store.js';
@@ -71,7 +72,7 @@ export function notePage(n, sec, { compact = false } = {}) {
   const metaRow = h('div', { class: 'note-meta' },
     h('select', { 'aria-label': 'Paper', onchange: (e) => { store.put('notes', { id: n.id, paper: e.target.value }, { quiet: true }); const pg = page.querySelector('.zoom-page'); pg.className = pg.className.replace(/paper-\w+/, `paper-${e.target.value}`); } },
       model.PAPERS.map((p) => h('option', { value: p, selected: (n.paper || 'lined') === p }, p[0].toUpperCase() + p.slice(1)))),
-    h('span', { class: 'lbl' }, 'Day:'),
+    
     dateButton(n.date, (d) => store.put('notes', { id: n.id, date: d }, { quiet: true }), { placeholder: 'Link to a day' }),
     h('button', { class: 'icon-btn sm', 'aria-label': 'Page options', onclick: (e) => menu(e.currentTarget, [
       { label: 'Clear handwriting', icon: '⌫', run: async () => { if (await confirmSheet('Clear handwriting?', 'You can undo this right after.', 'Clear')) { store.put('ink', { id: `note:${n.id}`, strokes: [] }); } } },
@@ -79,7 +80,7 @@ export function notePage(n, sec, { compact = false } = {}) {
         if (!(await confirmSheet('Delete this page?', 'The page and its handwriting will be removed.', 'Delete'))) return;
         store.remove('notes', n.id); store.remove('ink', `note:${n.id}`);
       } },
-    ]) }, '⋯'));
+    ]) }, icon('more')));
 
   return h('div', { class: 'note-page' }, title, compact ? null : metaRow,
     h('details', { class: 'typed', open: !!(n.text && n.text.replace(/<[^>]+>/g, '').trim()) },

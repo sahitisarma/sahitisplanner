@@ -5,7 +5,7 @@ import { key, parseKey, addDays, fromKeyTime } from './dates.js';
 import { newEventId } from './google.js';
 import { enqueue } from './queue.js';
 
-export const LOCAL_CAL = { id: 'local', summary: 'Planner', color: '#E4572E', accessRole: 'owner' };
+export const LOCAL_CAL = { id: 'local', summary: 'Planner', color: '#C0283A', accessRole: 'owner' };
 
 export function calendars() {
   const g = store.meta('gcals', []) || [];

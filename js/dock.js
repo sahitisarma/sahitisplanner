@@ -1,3 +1,4 @@
+import { icon } from './icons.js';
 // The floating pen dock: tools, presets, colors, thickness, undo/redo,
 // and selection actions (recolor, resize, convert to text, delete).
 import { h, toast, menu, colorRow, debounce, fill } from './ui.js';
@@ -13,10 +14,10 @@ const TOOLS = [
 ];
 
 const savePen = debounce(() => {
-  model.saveSettings({ pen: { tool: Pen.tool === 'eraser' || Pen.tool === 'select' ? 'pen' : Pen.tool, color: Pen.color, w: Pen.w } });
+  model.saveSettings({ pen: { tool: Pen.tool === 'eraser' || Pen.tool === 'select' ? 'pen' : Pen.tool, color: Pen.color, w: Pen.w, ew: Pen.ew } });
 }, 800);
 
-const SIZES = { pen: [1.2, 2, 3, 4.5, 7], hl: [8, 12, 16, 22, 30] };
+const SIZES = { pen: [1.2, 2, 3, 4.5, 7], hl: [8, 12, 16, 22, 30], eraser: [8, 14, 22, 34, 50] };
 
 export function mountDock(host, { onCapture, onFocus }) {
   const s = model.settings();
@@ -32,7 +33,7 @@ export function mountDock(host, { onCapture, onFocus }) {
       fill(root,
         h('span', { class: 'dock-label' }, 'Selection'),
         colorRow(st.favColors, null, (c) => sel.surface.recolorSelection(c)),
-        h('span', { class: 'dock-sep' }),
+        
         h('button', { class: 'dock-btn', 'aria-label': 'Smaller', onclick: () => sel.surface.resizeSelection(0.85) }, 'A−'),
         h('button', { class: 'dock-btn', 'aria-label': 'Larger', onclick: () => sel.surface.resizeSelection(1.18) }, 'A+'),
         h('button', { class: 'dock-btn text', onclick: () => convert(sel.surface) }, 'To text'),
@@ -43,28 +44,30 @@ export function mountDock(host, { onCapture, onFocus }) {
     }
     const kind = Pen.tool === 'hl' ? 'hl' : 'pen';
     const showSizes = Pen.tool === 'pen' || Pen.tool === 'hl' || Pen.tool === 'eraser';
-    const sizes = Pen.tool === 'eraser' ? SIZES.pen : SIZES[kind];
+    const isEraser = Pen.tool === 'eraser';
+    const sizes = isEraser ? SIZES.eraser : SIZES[kind];
+    const curSize = isEraser ? Pen.ew : Pen.w;
     fill(root,
       h('div', { class: 'dock-group' }, TOOLS.map((t) => h('button', {
         class: `dock-btn tool ${Pen.tool === t.id ? 'on' : ''}`, 'aria-label': t.label, title: t.label,
         onclick: () => { Pen.set({ tool: t.id, ...(t.id === 'hl' && Pen.w < 6 ? { w: 14 } : {}), ...(t.id === 'pen' && Pen.w > 10 ? { w: 2.2 } : {}) }); savePen(); draw(); },
       }, t.icon))),
-      h('span', { class: 'dock-sep' }),
+      
       showSizes ? h('div', { class: 'dock-group sizes', role: 'radiogroup', 'aria-label': 'Pencil size' }, sizes.map((w, i) => h('button', {
-        class: `size-dot ${Math.abs(Pen.w - w) < 0.05 ? 'on' : ''}`, 'aria-label': `Size ${i + 1}`, title: `Size ${i + 1}`,
-        onclick: () => { Pen.set({ w }); savePen(); draw(); },
-      }, h('i', { style: { width: `${6 + i * 3.5}px`, height: `${6 + i * 3.5}px`, background: Pen.tool === 'eraser' ? 'var(--muted)' : Pen.color, opacity: kind === 'hl' ? 0.55 : 1 } })))) : null,
-      h('span', { class: 'dock-sep' }),
+        class: `size-dot ${Math.abs(curSize - w) < 0.05 ? 'on' : ''}`, 'aria-label': `Size ${i + 1}`, title: `Size ${i + 1}`,
+        onclick: () => { Pen.set(isEraser ? { ew: w } : { w }); savePen(); draw(); },
+      }, h('i', { style: { width: `${6 + i * 3.5}px`, height: `${6 + i * 3.5}px`, background: isEraser ? 'transparent' : Pen.color, boxShadow: isEraser ? 'inset 0 0 0 1.5px var(--muted)' : 'none', opacity: kind === 'hl' ? 0.55 : 1 } })))) : null,
+      
       h('div', { class: 'dock-group colors' },
         st.favColors.slice(0, 5).map((c) => h('button', {
           class: `color-dot ${Pen.color.toLowerCase() === c.toLowerCase() ? 'on' : ''}`, style: { '--dot': c }, 'aria-label': `Color ${c}`,
           onclick: () => { Pen.set({ color: c, ...(Pen.tool === 'eraser' || Pen.tool === 'select' ? { tool: 'pen' } : {}) }); savePen(); draw(); },
         })),
-        h('button', { class: 'color-dot mix', 'aria-label': 'More colors and sizes', title: 'More colors and sizes', onclick: (e) => penMenu(e.currentTarget, draw) })),
-      h('span', { class: 'dock-sep' }),
+        h('button', { class: 'dock-btn mix', 'aria-label': 'More colors and sizes', title: 'More colors and sizes', onclick: (e) => penMenu(e.currentTarget, draw) }, icon('sliders', 20))),
+      
       h('button', { class: 'dock-btn', 'aria-label': 'Undo', title: 'Undo', disabled: !History.undoStack.length, onclick: () => History.undo() }, undoIcon()),
       h('button', { class: 'dock-btn', 'aria-label': 'Redo', title: 'Redo', disabled: !History.redoStack.length, onclick: () => History.redo() }, redoIcon()),
-      h('span', { class: 'dock-sep' }),
+      
       h('button', { class: 'dock-btn capture', 'aria-label': 'Quick capture', title: 'Quick capture', onclick: () => onCapture() }, micIcon()),
       onFocus ? h('button', { class: 'dock-btn', 'aria-label': 'Focus mode', title: 'Focus mode: hide everything but the page', onclick: () => onFocus() }, focusIcon()) : null,
     );
@@ -72,7 +75,10 @@ export function mountDock(host, { onCapture, onFocus }) {
 
   let currentSel = null;
   onSelection((sl) => { currentSel = sl; draw(); });
-  History.on(draw);
+  History.on(() => {
+    const u = root.querySelector('[aria-label="Undo"]'), r = root.querySelector('[aria-label="Redo"]');
+    if (u && r) { u.disabled = !History.undoStack.length; r.disabled = !History.redoStack.length; } else draw();
+  });
   draw();
   return { redraw: draw };
 }

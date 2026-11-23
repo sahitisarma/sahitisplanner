@@ -1,3 +1,4 @@
+import { icon } from './icons.js';
 // Sahiti's Planner: app shell.
 import * as store from './store.js';
 import * as model from './model.js';
@@ -33,7 +34,7 @@ async function boot() {
         h('div', { id: 'toolbar-host' }),
         h('div', { class: 'top-right' },
           h('button', { id: 'status', class: 'status', 'aria-live': 'polite', onclick: onStatusTap }),
-          h('button', { class: 'icon-btn', 'aria-label': 'Settings', title: 'Settings', onclick: () => navigate('settings') }, '⚙'))),
+          h('button', { class: 'icon-btn', 'aria-label': 'Settings', title: 'Settings', onclick: () => navigate('settings') }, icon('gear', 22)))),
       h('main', { id: 'main', 'data-scroll-key': 'main' })),
     h('nav', { id: 'tabs', 'aria-label': 'Sections' }),
     h('div', { id: 'toasts', 'aria-live': 'polite' }));
@@ -70,6 +71,9 @@ export function applyTheme() {
   r.setProperty('--paper', p.paper);
   r.setProperty('--ink', p.ink);
   r.setProperty('--line', p.line);
+  r.setProperty('--fill', p.fill || p.line);
+  r.setProperty('--card-solid', p.card || '#FFFFFF');
+  r.setProperty('--muted-solid', p.muted || '#8B7074');
   r.setProperty('--b1', p.backdrop[0]);
   r.setProperty('--b2', p.backdrop[1]);
   r.setProperty('--b3', p.backdrop[2] || p.backdrop[0]);

@@ -819,3 +819,206 @@ body { font-weight: 350; }
 .panel-name { font-size: 18px; letter-spacing: .12em; }
 .store-card-head h3 { font-size: 21px; }
 .sheet-head h2 { font-size: 22px; }
+/* Settings spacing: room between the buttons and the dropdowns, labels line up */
+.settings-card > .row.gap { margin: 10px 0 24px; }
+.settings .grid2 { align-items: end; gap: 18px 20px; margin-top: 4px; }
+.settings .grid2 label { margin-bottom: 0; }
+.settings-card .ok { margin: 0 0 18px; }
+.btn.danger { color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+
+/* =====================================================================
+   Clean pass: no borders on containers, no pills, no tints or opacity
+   shades, no gradients, no decorative dividers, no all-caps labels,
+   no italics, no tight letter-spacing, gentle corners.
+   ===================================================================== */
+:root { --muted: var(--muted-solid, #8B7074); --faint: var(--fill, #F6ECE9); --card: var(--card-solid, #FFFFFF); --radius: 10px; }
+* { letter-spacing: 0; }
+em, i, .empty, .live-text, .day-dow, .pad-hint, .sugg-raw, .carried-from, .note-text:empty::before { font-style: normal; }
+
+/* backdrop: plain stripes, nothing layered on top */
+#backdrop::before, #backdrop::after { display: none; }
+
+/* the book and top bar */
+#app { border: 0; box-shadow: 0 10px 40px rgba(58, 28, 34, .10); border-radius: 14px; }
+#topbar { border-bottom: 0; }
+.status { border: 0; background: none; padding: 6px 4px; font-size: 14px; color: var(--muted); min-height: 0; }
+.status .dot { width: 7px; height: 7px; }
+.status.attention { background: none; color: var(--accent); }
+
+/* tabs: solid colors, gentle corners */
+.tab { background: var(--c); box-shadow: none; border: 0; border-radius: 0 8px 8px 0; font-weight: 450; }
+.tab.on { background: var(--c); transform: translateX(6px); }
+.tab.add { background: var(--card); border: 0; color: var(--muted); }
+
+/* headings and labels: titles stay in capitals, everything under them is sentence case */
+.block-h, .sub-h, .lbl, .menu-label, .dow-row, .carried-h, .hour-label, .wdow, .day-month, .typed summary, .mix-label {
+  text-transform: none; letter-spacing: 0;
+}
+.block-h { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--ink); margin: 0 0 10px; }
+.block-h::after, .page-title::after { display: none; }
+.sub-h { font-size: 15px; font-weight: 500; color: var(--muted); margin: 16px 0 6px; }
+.lbl { font-size: 14px; font-weight: 450; color: var(--muted); }
+.menu-label { font-size: 13px; font-weight: 450; color: var(--muted); padding: 8px 6px 6px; }
+.dow-row span { font-size: 13px; font-weight: 450; color: var(--muted); }
+.dow-row span:first-child { color: var(--muted); }
+.hour-label { font-size: 12px; font-weight: 400; }
+.wdow { font-size: 14px; font-weight: 450; }
+.day-month { font-size: 15px; font-weight: 400; color: var(--muted); }
+.day-num, .page-title, .cal-title, .every-title, .panel-name, .store-card-head h3, .sheet-head h2, .note-title, .wnum, .day-dow { letter-spacing: 0; }
+.page-title, .cal-title, .every-title, .panel-name, .store-card-head h3, .sheet-head h2 { letter-spacing: .08em; }
+.typed summary { font-size: 14px; font-weight: 450; color: var(--muted); }
+.carried-h { font-family: var(--font-display); font-size: 18px; font-weight: 500; color: var(--ink); }
+
+/* controls: no pills, no borders */
+input, select, textarea { border: 0; background: var(--fill); border-radius: 6px; box-shadow: none; }
+input:focus, select:focus, textarea:focus { box-shadow: none; outline: 2px solid var(--ink); outline-offset: 0; }
+.btn { border: 0; border-radius: 6px; background: var(--fill); box-shadow: none; font-weight: 450; }
+.btn.primary { background: var(--accent); color: #fff; box-shadow: none; }
+.btn.danger { background: var(--fill); color: var(--accent); border: 0; }
+.chip { border: 0; border-radius: 6px; background: var(--fill); font-weight: 450; }
+.chip.on { background: var(--ink); color: var(--paper); }
+.chip.round { border-radius: 50%; }
+.seg { border: 0; background: none; padding: 0; gap: 4px; }
+.seg button { border-radius: 6px; min-height: 36px; padding: 6px 12px; color: var(--muted); font-weight: 450; }
+.seg button.on { background: var(--fill); color: var(--ink); }
+.icon-btn, .icon-btn.sm { border-radius: 50%; color: var(--ink); }
+.icon-btn:hover { background: var(--fill); }
+.date-btn { border: 0; border-radius: 6px; background: var(--fill); font-weight: 450; }
+.quick-dates .chip { min-height: 34px; }
+.toggle { font-weight: 400; }
+
+/* items: no tags, no lines between rows, plain meta text */
+.item { border-bottom: 0; min-height: 44px; padding: 4px 0; }
+.item .drag { display: none; }
+.item-meta { display: block; font-size: 13px; color: var(--muted); padding: 0 2px 4px; white-space: pre-wrap; }
+.item-meta.overdue { color: var(--accent); }
+.check { border: 1.6px solid var(--muted); border-radius: 4px; width: 24px; height: 24px; }
+.check.on { background: var(--accent); border-color: var(--accent); }
+.item.done .item-text, .item.done .item-ink { opacity: 1; color: var(--muted); }
+.typed-items { margin-bottom: 8px; }
+
+/* containers: fills and spacing instead of borders */
+.card, .panel, .store-card, .zoom-wrap, .wday, .voice-card, .note-card, .recorder, .palette, .note-text, .tb, .note-ink, .composer-pad, .capture-pad {
+  border: 0 !important; box-shadow: none;
+}
+.card { background: var(--card); border-radius: 10px; }
+.panel { background: var(--card); border-radius: 10px; box-shadow: 0 1px 3px rgba(58, 28, 34, .06); }
+.panel-head { background: none; border-bottom: 0; padding: 10px 8px 4px 16px; }
+.panel-name::before { display: none; }
+.panel-name { gap: 6px; }
+.caret { color: var(--muted); display: inline-flex; }
+.panel-resize::after { display: none; }
+.store-card { background: var(--card); border-radius: 10px; padding: 14px 16px; }
+.store-card-head h3::before { display: none; }
+.zoom-wrap { background: var(--card); border-radius: 10px; }
+.wday { background: var(--card); border-radius: 10px; }
+.wday.today .wnum { color: var(--accent); }
+.voice-card, .recorder { background: var(--card); border-radius: 10px; }
+.note-card { background: var(--card); border-radius: 8px; }
+.note-card.on { box-shadow: 0 0 0 2px var(--ink); }
+.note-new { border: 0; background: var(--fill); border-radius: 8px; }
+.note-text, .tb { background: var(--fill); border-radius: 6px; }
+.palette { background: var(--card); border-radius: 8px; }
+.palette.on { box-shadow: 0 0 0 2px var(--ink); }
+.pal-swatch { display: none; }
+
+/* dividers gone: spine, sheet edges, menu rules, row lines */
+.spine::before, .spine .rings { display: none; }
+.sheet-head, .sheet-actions { border: 0; }
+.menu hr { border: 0; margin: 4px 0; }
+.link-row, .carried-line { border-bottom: 0; }
+.spread > .page.left { border-right: 0; }
+@media (orientation: portrait), (max-width: 980px) { .spread > .page.left { border-bottom: 0; } }
+
+/* sheets, menus, toasts: soft corners, no outlines */
+.sheet { border: 0; border-radius: 12px; box-shadow: 0 20px 60px rgba(58, 28, 34, .18); }
+.menu { border: 0; border-radius: 10px; box-shadow: 0 12px 40px rgba(58, 28, 34, .16); }
+.menu-item { border-radius: 6px; font-weight: 400; }
+.toast { border-radius: 8px; box-shadow: 0 8px 30px rgba(58, 28, 34, .2); font-weight: 400; }
+.zoom-chip { border-radius: 6px; font-weight: 450; }
+
+/* toolbar: no separators, no rounded squares */
+#toolbar-host .dock { border: 0; background: var(--fill); border-radius: 10px; gap: 6px; padding: 4px 8px; }
+.dock-group { gap: 2px; }
+.dock-btn { border-radius: 50%; min-width: 42px; width: 42px; }
+.dock-btn.text { border-radius: 6px; width: auto; }
+.dock-btn.tool.on { border-radius: 50%; }
+.dock-btn.capture { border-radius: 50%; background: var(--accent); color: #fff; margin: 0 2px; }
+.size-dot { border-radius: 50%; width: 36px; }
+.size-dot.on { background: var(--card); }
+.preset { border-radius: 50%; }
+.swatch.custom { background: var(--fill); color: var(--ink); text-shadow: none; display: inline-grid; place-items: center; }
+
+/* calendar: plain, no tinted chips */
+.month-grid { border: 0; border-radius: 10px; background: var(--card); }
+.mcell { border-color: var(--line); }
+.mcell.out { background: var(--card); color: var(--muted); }
+.mcell.out .mnum { color: var(--muted); }
+.mcell.sel { box-shadow: inset 0 0 0 2px var(--ink); }
+.mcell.today .mnum { border-radius: 50%; padding: 1px 7px; }
+.ev { background: none; border-left: 3px solid var(--c); border-radius: 0; padding: 1px 6px; }
+.ev.allday { background: var(--c); color: #fff; border-left: 0; border-radius: 3px; }
+.ev.pending { background-image: none; }
+.tl-ev { background: var(--card); box-shadow: 0 1px 3px rgba(58, 28, 34, .10); border-radius: 4px; }
+.now-line::before { border-radius: 50%; }
+
+/* checklist paper: square boxes, a strike line when done, no faded overlay */
+.cl-box { border: 1.6px solid var(--muted); border-radius: calc(var(--u, 1px) * 4); background: var(--card); }
+.cl-box.static { border-radius: 4px; }
+.cl-done.on { background: none; }
+.cl-done.on::after { background: var(--muted); }
+.carried { border: 0; background: var(--card); border-radius: 10px; padding: 10px 14px; }
+.carried-line.done .carried-ink { opacity: 1; filter: grayscale(1); }
+
+/* to buy tabs: plain text tabs */
+.store-tab { border: 0; border-radius: 6px; background: none; color: var(--muted); font-weight: 450; padding: 6px 12px; }
+.store-tab.on { background: var(--fill); color: var(--ink); }
+.store-tab.add { border: 0; background: none; color: var(--accent); }
+
+/* settings */
+.sec-row .swatch { border-radius: 50%; }
+.settings-card { padding: 20px 22px; }
+.ok { color: var(--ink); font-weight: 450; }
+.hint { color: var(--muted); }
+.swatch { border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
+.swatch.sel { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--ink); }
+/* Keep the top bar perfectly still: the status text has a fixed slot */
+.logo { width: 220px; flex: none; text-align: left; }
+.top-right { width: 220px; justify-content: flex-end; flex: none; }
+.status { width: 160px; justify-content: flex-end; white-space: nowrap; overflow: hidden; }
+#toolbar-host .dock { flex: none; }
+@media (orientation: portrait), (max-width: 1100px) {
+  .logo { width: auto; }
+  .top-right { width: 150px; }
+  .status { width: 100px; }
+}
+.mix-preview { border-radius: 50%; width: 40px; height: 40px; }
+.day-hero { align-items: baseline; }
+/* View switchers (Month / Week / Day, list tabs): plain words, the chosen one underlined. No shapes. */
+.seg { border-radius: 0; overflow: visible; background: none; border: 0; padding: 0; gap: 2px; }
+.seg button { background: none !important; border-radius: 0; padding: 6px 10px; color: var(--muted); font-weight: 400; }
+.seg button.on { color: var(--ink); font-weight: 500; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 6px; }
+.store-tab, .store-tab.on { background: none; border-radius: 0; }
+.store-tab.on { color: var(--ink); font-weight: 500; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 6px; }
+/* Today's date: a true circle */
+.mnum { display: inline-grid; place-items: center; min-width: 1.9em; height: 1.9em; padding: 0 !important; border-radius: 50%; line-height: 1; }
+.mcell.today .mnum { background: var(--accent); color: #fff; width: 1.9em; height: 1.9em; border-radius: 50%; padding: 0 !important; }
+/* Month picker (tap the month name) */
+.cal-title-btn { display: inline-flex; align-items: center; gap: 8px; font: inherit; letter-spacing: inherit; color: inherit; text-transform: inherit; padding: 2px 0; }
+.cal-title-btn svg { color: var(--muted); }
+.month-picker { width: 280px; padding: 4px; }
+.mp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.mp-year { font-family: var(--font-display); font-size: 22px; }
+.mp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.mp-month { min-height: 44px; border-radius: 6px; font-size: 15px; color: var(--ink); }
+.mp-month:hover { background: var(--fill); }
+.mp-month.now { color: var(--accent); font-weight: 500; }
+.mp-month.on { background: var(--ink); color: var(--paper); }
+/* Toolbar breathing room: even gaps between groups and between color dots */
+#toolbar-host .dock { gap: 14px; padding: 4px 10px; }
+.dock-group.colors { gap: 10px; padding: 0 2px; align-items: center; }
+.dock-group.sizes { gap: 2px; }
+.dock-btn.mix { margin-left: -4px; }
+/* The tab you're on is bold */
+.tab { font-weight: 400; }
+.tab.on { font-weight: 700; }
