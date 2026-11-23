@@ -654,7 +654,7 @@ html[data-pattern=stripes] #backdrop { background: repeating-linear-gradient(90d
 /* toolbar pieces */
 .dock-btn { min-width: 42px; height: 42px; border-radius: 12px; color: var(--ink); }
 .dock-btn.tool.on { background: var(--ink); color: var(--paper); }
-.dock-btn.capture { background: var(--s2); color: #fff; }
+.dock-btn.capture { background: var(--s2); color: #fff; width: 42px; margin: 0 6px 0 2px; }
 .dock-sep { height: 24px; margin: 0 6px; background: var(--edge); }
 .sizes { gap: 0; }
 .size-dot { width: 36px; height: 42px; display: grid; place-items: center; border-radius: 10px; }
@@ -778,3 +778,44 @@ html.focus #main { padding-top: 12px; }
 @media (max-width: 900px) {
   .logo { display: none; }
 }
+/* Logo: elegant calligraphic script */
+.logo { font-family: 'Pinyon Script', var(--font-display); font-style: normal; font-weight: 400; font-size: 34px; line-height: 1; letter-spacing: 0; padding-top: 4px; }
+/* Center every toolbar icon inside its button */
+.dock-btn, .size-dot { display: inline-flex; flex-direction: row; align-items: center; justify-content: center; padding: 0; }
+.dock-btn svg { display: block; flex: none; }
+
+/* Thin, elegant type: light serif headings, light sans text */
+.page-title, .cal-title, .every-title, .panel-name, .note-title, .store-card-head h3, .sheet-head h2, .day-dow, .wnum, .day-num {
+  font-weight: 400; letter-spacing: 0;
+}
+.page-title { font-size: 40px; }
+.cal-title { font-size: 34px; }
+.cal.compact .cal-title { font-size: 28px; }
+.every-title { font-size: 30px; }
+.panel-name { font-size: 22px; }
+.note-title { font-size: 34px; }
+.sheet-head h2 { font-size: 28px; }
+.store-card-head h3 { font-size: 26px; }
+.day-num { font-size: 84px; font-weight: 300; }
+.day-dow { font-size: 30px; }
+.wnum { font-size: 28px; }
+
+body { font-weight: 350; }
+.mnum { font-weight: 400; }
+.ev-time { font-weight: 500; }
+.block-h, .sub-h, .lbl, .menu-label, .dow-row, .carried-h, .hour-label, .wdow, .day-month { font-weight: 500; }
+.btn, .chip, .seg button, .store-tab, .status, .tab, .menu-item, .badge, .note-card-title, .toggle, .dock-btn.text, .zoom-chip, .mix-row { font-weight: 450; }
+.form label { font-weight: 450; }
+.big-input { font-weight: 450; }
+.toast { font-weight: 450; }
+/* Titles in elegant spaced capitals, like the cover lettering */
+.page-title, .cal-title, .every-title, .panel-name, .store-card-head h3, .sheet-head h2 {
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.page-title { font-size: 34px; }
+.cal-title { font-size: 28px; }
+.cal.compact .cal-title { font-size: 22px; }
+.every-title { font-size: 26px; }
+.panel-name { font-size: 18px; letter-spacing: .12em; }
+.store-card-head h3 { font-size: 21px; }
+.sheet-head h2 { font-size: 22px; }

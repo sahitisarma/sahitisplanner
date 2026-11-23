@@ -25,7 +25,7 @@ export function renderEverything(host) {
 
   host.append(h('div', { class: 'everything-wrap' },
     h('div', { class: 'everything-bar' },
-      h('h2', { class: 'every-title' }, 'Everything ✦'),
+      h('h2', { class: 'every-title' }, 'Everything'),
       unused.length ? h('button', { class: 'chip', onclick: (e) => menu(e.currentTarget, unused.map((s) => ({
         label: `Add ${s.name}`, run: () => model.saveLayout({ right: [...model.layout().right, s.id] }),
       }))) }, 'Add section') : null,

@@ -64,6 +64,7 @@ export function mountDock(host, { onCapture, onFocus }) {
       h('span', { class: 'dock-sep' }),
       h('button', { class: 'dock-btn', 'aria-label': 'Undo', title: 'Undo', disabled: !History.undoStack.length, onclick: () => History.undo() }, undoIcon()),
       h('button', { class: 'dock-btn', 'aria-label': 'Redo', title: 'Redo', disabled: !History.redoStack.length, onclick: () => History.redo() }, redoIcon()),
+      h('span', { class: 'dock-sep' }),
       h('button', { class: 'dock-btn capture', 'aria-label': 'Quick capture', title: 'Quick capture', onclick: () => onCapture() }, micIcon()),
       onFocus ? h('button', { class: 'dock-btn', 'aria-label': 'Focus mode', title: 'Focus mode: hide everything but the page', onclick: () => onFocus() }, focusIcon()) : null,
     );

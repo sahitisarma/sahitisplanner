@@ -29,7 +29,7 @@ async function boot() {
     h('div', { id: 'backdrop' }),
     h('div', { id: 'app' },
       h('header', { id: 'topbar' },
-        h('button', { class: 'logo', onclick: () => navigate('everything'), 'aria-label': 'Everything view' }, 'Sahiti’s Planner'),
+        h('button', { class: 'logo', onclick: () => navigate('everything'), 'aria-label': 'Dashboard' }, 'Sahiti’s Planner'),
         h('div', { id: 'toolbar-host' }),
         h('div', { class: 'top-right' },
           h('button', { id: 'status', class: 'status', 'aria-live': 'polite', onclick: onStatusTap }),
@@ -77,7 +77,7 @@ export function applyTheme() {
   p.swatches.forEach((c, i) => r.setProperty(`--s${i}`, c));
   r.setProperty('--accent', p.swatches[0]);
   r.setProperty('--accent2', p.swatches[1]);
-  r.setProperty('--font-display', `'${s.fontDisplay}', 'Playfair Display', Georgia, serif`);
+  r.setProperty('--font-display', `'${s.fontDisplay}', 'Cormorant Garamond', Georgia, serif`);
   r.setProperty('--font-body', `'${s.fontBody}', 'Inter', system-ui, sans-serif`);
   r.setProperty('--fs', `${s.fontSize}px`);
   document.documentElement.dataset.pattern = p.pattern;
@@ -95,7 +95,7 @@ function toggleFocus() {
 function navigate(r) {
   route = r;
   try { localStorage.setItem('sp-route', r); } catch {}
-  history.replaceState(null, '', `#/${r}`);
+  try { history.replaceState(null, '', `#/${r}`); } catch {}
   render({ resetScroll: true });
 }
 
@@ -165,7 +165,7 @@ function renderTabs() {
   const tabs = $('#tabs');
   const cur = route.split('/')[0] === 'notes' && route.includes('/') ? 'notes' : route;
   fill(tabs, 
-    h('button', { class: `tab ${cur === 'everything' ? 'on' : ''}`, style: { '--c': 'var(--ink)' }, onclick: () => navigate('everything') }, h('span', {}, '✦ Everything')),
+    h('button', { class: `tab ${cur === 'everything' ? 'on' : ''}`, style: { '--c': 'var(--ink)' }, onclick: () => navigate('everything') }, h('span', {}, 'Dashboard')),
     ...model.sections().map((s) => h('button', { class: `tab ${cur === s.id ? 'on' : ''}`, style: { '--c': s.color, '--tc': textOn(s.color) }, onclick: () => navigate(s.id) }, h('span', {}, s.name))),
     h('button', { class: `tab add ${cur === 'settings' ? 'on' : ''}`, style: { '--c': 'var(--s6)' }, 'aria-label': 'Manage sections', onclick: () => navigate('settings') }, h('span', {}, 'Edit')));
 }

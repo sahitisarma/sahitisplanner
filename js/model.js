@@ -8,7 +8,7 @@ export const PALETTES = {
     name: 'Winner', pattern: 'stripes',
     paper: '#FDF9F5', ink: '#3A1C22', line: '#F2E4E1', backdrop: ['#F3C3CF', '#FCEEF1'],
     swatches: ['#C0283A', '#7A1F2E', '#E58FA5', '#B8868F', '#3A1C22', '#5B6C8F', '#D8B4A0', '#9A9693'],
-    sections: { calendar: '#7A1F2E', todos: '#C0283A', errands: '#B8868F', tobuy: '#E58FA5', notes: '#D97F95', voice: '#9A9693' },
+    sections: { calendar: '#7A1F2E', todos: '#C0283A', errands: '#B8868F', tobuy: '#E58FA5', notes: '#D97F95', voice: '#A8506A' },
   },
   retro: {
     name: 'Modern Retro', pattern: 'checker',
@@ -44,7 +44,7 @@ export const PALETTES = {
 };
 
 export const FONTS = {
-  display: ['Playfair Display', 'Bodoni Moda', 'Fraunces', 'DM Serif Display', 'Gloock', 'Shrikhand'],
+  display: ['Cormorant Garamond', 'Playfair Display', 'Bodoni Moda', 'Fraunces', 'DM Serif Display', 'Gloock', 'Shrikhand'],
   body: ['Inter', 'DM Sans', 'Outfit', 'Fraunces', 'Space Grotesk', 'Caveat', 'Patrick Hand', 'Kalam', 'Gaegu'],
 };
 export const FONT_SIZES = [14, 16, 18, 20, 24, 28];
@@ -66,12 +66,12 @@ const DEFAULT_SECTIONS = [
   { id: 'errands', type: 'errands', name: 'Errands', color: '#B8868F' },
   { id: 'tobuy', type: 'tobuy', name: 'To Buy', color: '#E58FA5' },
   { id: 'notes', type: 'notes', name: 'Notes', color: '#D97F95' },
-  { id: 'voice', type: 'voice', name: 'Voice Notes', color: '#9A9693' },
+  { id: 'voice', type: 'voice', name: 'Voice Notes', color: '#A8506A' },
 ];
 
 export const DEFAULT_SETTINGS = {
   palette: 'winner',
-  fontDisplay: 'Playfair Display',
+  fontDisplay: 'Cormorant Garamond',
   fontBody: 'Inter',
   fontSize: 18,
   paper: 'lined',
@@ -141,6 +141,15 @@ export function seed() {
     }
     store.setMeta('local:migr-winner', true, { silent: true });
   }
+  // Headings moved to a thinner serif
+  if (!store.meta('local:migr-cormorant')) {
+    const st = store.meta('settings', {}) || {};
+    if (!st.fontDisplay || st.fontDisplay === 'Playfair Display') store.setMeta('settings', { ...st, fontDisplay: 'Cormorant Garamond' }, { silent: true });
+    store.setMeta('local:migr-cormorant', true, { silent: true });
+  }
+  // Voice Notes moved from gray to raspberry
+  const voice = store.get('sections', 'voice');
+  if (voice && voice.color === '#9A9693') store.put('sections', { id: 'voice', color: '#A8506A' }, { silent: true });
   if (!store.all('sections', true).length) {
     DEFAULT_SECTIONS.forEach((s, i) => store.put('sections', { ...s, order: i, hidden: false }, { silent: true }));
   }
