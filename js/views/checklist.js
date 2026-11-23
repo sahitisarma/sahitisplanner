@@ -109,3 +109,16 @@ export function carriedLines(prefix, day, { lookback = 30 } = {}) {
     }));
   return list;
 }
+
+// Small pictures of each written line on a page (for the day overview)
+export function lineThumbs(inkId, widthPx = 360) {
+  const rec = store.get('ink', inkId);
+  if (!rec?.strokes?.length) return [];
+  return usedRows(rec).map((r) => {
+    const strokes = rec.strokes.filter((s) => rowOfStroke(s) === r).map((s) => ({ ...s, pts: s.pts.map((v, k) => (k % 3 === 1 ? v - (TOP + r * ROW) : v)) }));
+    const done = !!rec.checked?.[r];
+    return h('div', { class: `ag-line ${done ? 'done' : ''}` },
+      h('span', { class: `cl-box static ${done ? 'on' : ''}` }),
+      h('div', { class: 'carried-ink' }, thumbnail(strokes, widthPx, 1000, ROW)));
+  });
+}

@@ -67,7 +67,14 @@ function toggle(id) {
 function arrangeMenu(anchor, id, side, idx, count) {
   const L = model.layout();
   const other = side === 'left' ? 'right' : 'left';
-  const move = (fn) => { const next = { left: [...L.left], right: [...L.right] }; fn(next); model.saveLayout(next); };
+  const move = (fn) => {
+    const next = { left: [...L.left], right: [...L.right] }; fn(next); model.saveLayout(next);
+    // Tabs follow the dashboard order: left page top to bottom, then right page.
+    const dash = [...next.left, ...next.right];
+    const all = model.sections({ includeHidden: true });
+    const ordered = [...dash.map((d) => all.find((x) => x.id === d)).filter(Boolean), ...all.filter((x) => !dash.includes(x.id))];
+    ordered.forEach((x, k) => { if (x.order !== k) store.put('sections', { id: x.id, order: k }); });
+  };
   menu(anchor, [
     idx > 0 && { label: 'Move up', icon: '↑', run: () => move((n) => { const a = n[side]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; }) },
     idx < count - 1 && { label: 'Move down', icon: '↓', run: () => move((n) => { const a = n[side]; [a[idx + 1], a[idx]] = [a[idx], a[idx + 1]]; }) },

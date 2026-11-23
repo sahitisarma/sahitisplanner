@@ -25,7 +25,8 @@ function card(title, ...kids) { return h('div', { class: 'card settings-card' },
 
 // ---------- sections ----------
 function sectionsCard() {
-  const secs = model.sections({ includeHidden: true });
+  const secsAll = model.sections({ includeHidden: true });
+  const secs = secsAll.filter((x) => !x.removed);
   const pal = model.PALETTES[model.settings().palette] || model.PALETTES.winner;
   const reorder = (i, j) => {
     const a = secs[i], b = secs[j];
@@ -42,12 +43,14 @@ function sectionsCard() {
       h('button', { class: 'icon-btn sm', 'aria-label': 'Move up', disabled: i === 0, onclick: () => reorder(i, i - 1) }, icon('up', 18)),
       h('button', { class: 'icon-btn sm', 'aria-label': 'Move down', disabled: i === secs.length - 1, onclick: () => reorder(i, i + 1) }, icon('down', 18)),
       h('button', { class: 'chip', onclick: () => store.put('sections', { id: sec.id, hidden: !sec.hidden }) }, sec.hidden ? 'Show' : 'Hide'),
-      sec.custom ? h('button', { class: 'icon-btn sm', 'aria-label': 'Delete section', onclick: async () => {
-        if (await confirmSheet('Delete section?', `“${sec.name}” and its items will be removed.`, 'Delete')) {
+      h('button', { class: 'icon-btn sm', 'aria-label': 'Delete section', onclick: async () => {
+        if (!(await confirmSheet('Delete section?', `“${sec.name}” will be removed.`, 'Delete'))) return;
+        if (sec.custom) {
           store.remove('sections', sec.id);
           store.all('items').filter((it) => it.section === sec.id).forEach((it) => store.remove('items', it.id));
-        }
-      } }, icon('trash', 18)) : null))),
+        } else store.put('sections', { id: sec.id, hidden: true, removed: true }); // built-ins can come back
+      } }, icon('trash', 18))))),
+    secsAll.some((x) => x.removed) ? h('button', { class: 'linkish', onclick: () => secsAll.filter((x) => x.removed).forEach((x) => store.put('sections', { id: x.id, hidden: false, removed: false })) }, 'Bring back deleted sections') : null,
     h('div', { class: 'row gap wrap' },
       h('button', { class: 'btn sm', onclick: () => addSection('list') }, 'New list'),
       h('button', { class: 'btn sm', onclick: () => addSection('notes') }, 'New notebook')));

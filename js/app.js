@@ -100,12 +100,16 @@ function navigate(r) {
   route = r;
   try { localStorage.setItem('sp-route', r); } catch {}
   try { history.replaceState(null, '', `#/${r}`); } catch {}
-  render({ resetScroll: true });
+  // Going to another page always works, even if a text box still has focus
+  // (on iPad, tapping a tab doesn't take focus away from what you typed in).
+  try { document.activeElement?.blur?.(); } catch {}
+  pendingRender = false;
+  render({ resetScroll: true, force: true });
 }
 
 // ---------- rendering ----------
 let pendingRender = false;
-function render({ resetScroll = false } = {}) {
+function render({ resetScroll = false, force = false } = {}) {
   // Never re-render under your Pencil or while you are typing.
   const main = $('#main');
   // Defer only while the Pencil is down or you're typing in a rich-text note.
@@ -113,7 +117,7 @@ function render({ resetScroll = false } = {}) {
     const a = document.activeElement;
     return !!document.querySelector('.ink-host.writing') || !!(a && main.contains(a) && (a.isContentEditable || (a.matches('input, textarea') && !a.dataset.fk)));
   };
-  if (busy()) {
+  if (!force && busy()) {
     if (!pendingRender) {
       pendingRender = true;
       const later = () => setTimeout(() => {

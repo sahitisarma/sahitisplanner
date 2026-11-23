@@ -1127,3 +1127,13 @@ input:focus, select:focus, textarea:focus { box-shadow: none; outline: 2px solid
 .sec-row input { min-width: 0; }
 .sec-row .chip { justify-self: stretch; text-align: center; }
 .linkish { background: none; border: 0; padding: 4px 0; font: inherit; font-size: 14px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* Store tabs use the serif from the titles */
+.store-tab { font-family: var(--font-display), 'Cormorant Garamond', serif !important; font-size: 19px !important; font-weight: 500 !important; letter-spacing: .01em; }
+.store-tab.on { font-weight: 600 !important; }
+/* Settings: labels and choices in the title serif, lighter controls */
+.settings-card label, .settings-card .palette span { font-family: var(--font-display), 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; letter-spacing: .01em; }
+.settings-card .palette.on span { font-weight: 600; }
+.settings-card select, .settings-card input, .settings-card .chip, .settings-card .btn { font-family: var(--font-body), 'Inter', sans-serif; font-weight: 300 !important; letter-spacing: 0; }
+.settings-card label { font-size: 18px !important; color: var(--ink) !important; text-transform: none !important; }
+.settings-card label select, .settings-card label input { font-size: 16px; margin-top: 6px; }
+.settings-card .palette span { font-size: 18px !important; }
