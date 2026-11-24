@@ -1174,3 +1174,12 @@ input:focus, select:focus, textarea:focus { box-shadow: none; outline: 2px solid
 .voice-card .transcript { width: 100%; min-height: 80px; font-size: 16px; font-weight: 300; line-height: 1.5; border: 0; background: var(--fill); border-radius: 10px; padding: 12px 14px; resize: vertical; }
 .live-text { font-size: 16px; font-weight: 300; line-height: 1.5; }
 .note-text { min-height: 50vh; }
+/* Text to my phone */
+.list-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.store-tabs .send-chip { margin-left: auto; font-family: var(--font-body), 'Inter', sans-serif !important; }
+.send-sheet { display: flex; flex-direction: column; gap: 14px; min-width: min(480px, 80vw); }
+.send-sheet label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 300; color: var(--muted); }
+.send-sheet input, .send-text { font: inherit; font-size: 17px; font-weight: 400; color: var(--ink); background: var(--fill); border: 0; border-radius: 10px; padding: 12px 14px; }
+.send-text { min-height: 220px; line-height: 1.5; resize: vertical; }
+.send-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.send-actions a.btn { text-decoration: none; }

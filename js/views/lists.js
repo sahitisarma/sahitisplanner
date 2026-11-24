@@ -7,6 +7,7 @@ import * as D from '../dates.js';
 import { itemList } from './items.js';
 import { checklistPage } from './checklist.js';
 import { bus } from '../bus.js';
+import { sendToPhone } from '../share.js';
 
 const add = (el, ...kids) => el.append(...kids.flat(Infinity).filter((k) => k != null && k !== false));
 const tabKey = (id) => `sp-tab-${id}`;
@@ -16,7 +17,10 @@ const setTab = (id, v) => { try { localStorage.setItem(tabKey(id), v); } catch {
 export function renderList(host, sec, { compact = false } = {}) {
   // Typed items (from quick capture or Google Tasks) show above the paper, if there are any.
   const typed = model.sectionItems(sec.id);
+  const send = compact ? null : h('div', { class: 'list-actions' },
+    h('button', { class: 'chip', onclick: () => sendToPhone(sec.name, [{ title: sec.name, inkId: `list:${sec.id}`, items: typed }]) }, 'Text to my phone'));
   add(host, h('div', { class: `listview ${compact ? 'compact' : ''}`, style: { '--c': sec.color } },
+    send,
     typed.length ? h('div', { class: 'typed-items' }, itemList(typed, { day: D.todayKey() })) : null,
     checklistPage(`list:${sec.id}`, { height: compact ? 'auto' : 'auto', minRows: compact ? 8 : 16, label: `${sec.name} page` })));
 }
@@ -34,7 +38,11 @@ export function renderToBuy(host, sec, { compact = false } = {}) {
       class: `store-tab ${tab === s.id ? 'on' : ''}`, style: { '--c': s.color || sec.color },
       onclick: () => { setTab(sec.id, s.id); bus.rerender(); },
     }, s.name)),
-    h('button', { class: 'store-tab add', onclick: () => editStore(null) }, 'New store'));
+    h('button', { class: 'store-tab add', onclick: () => editStore(null) }, 'New store'),
+    compact ? null : h('button', { class: 'chip send-chip', onclick: () => {
+      const list = tab === 'all' ? stores : stores.filter((s) => s.id === tab);
+      sendToPhone(tab === 'all' ? sec.name : list[0].name, list.map((s) => ({ title: s.name, inkId: `list:tobuy:${s.id}`, items: typedFor(s.id) })));
+    } }, 'Text to my phone'));
 
   const card = (s) => h('div', { class: 'store-card', style: { '--c': s.color || sec.color } },
     h('div', { class: 'store-card-head' },
