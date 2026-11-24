@@ -568,24 +568,38 @@ export function cropStrokes(strokes, pad = 8) {
 // Optional handwriting-to-text. Only runs when you ask for it.
 // Uses Google's public handwriting recognizer (the one behind Google Input Tools).
 export async function recognize(strokes) {
-  const b = bbox(strokes);
+  const ink0 = strokes.filter((st) => st.tool !== 'hl' && st.pts.length >= 3);
+  const b = bbox(ink0);
   if (!b) return '';
-  const ink = strokes.filter((s) => s.tool !== 'hl').map((s) => {
-    const xs = [], ys = [];
-    for (let i = 0; i < s.pts.length; i += 3) { xs.push(Math.round(s.pts[i] - b.x)); ys.push(Math.round(s.pts[i + 1] - b.y)); }
-    return [xs, ys];
+  // Page units are small (a word is ~30 units tall), so scale up before
+  // rounding, or the letters lose their shape. Also add stroke timing: the
+  // reader is much more accurate when it knows the order and speed of writing.
+  const S = Math.max(2, Math.min(12, 120 / Math.max(10, b.h)));
+  let t = 0;
+  const ink = ink0.map((st) => {
+    const xs = [], ys = [], ts = [];
+    let px = null, py = null;
+    for (let i = 0; i < st.pts.length; i += 3) {
+      const x = Math.round((st.pts[i] - b.x) * S), y = Math.round((st.pts[i + 1] - b.y) * S);
+      if (x === px && y === py) continue; // drop repeated points
+      xs.push(x); ys.push(y); ts.push(t); t += 10;
+      px = x; py = y;
+    }
+    t += 150; // pen lifted
+    return [xs, ys, ts];
   });
   const res = await fetch('https://inputtools.google.com/request?ime=handwriting&app=sahitisplanner&dbg=0&cs=1&oe=UTF-8', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       options: 'enable_pre_space',
-      requests: [{ writing_guide: { writing_area_width: Math.round(b.w), writing_area_height: Math.round(b.h) }, ink, language: 'en' }],
+      requests: [{ writing_guide: { writing_area_width: Math.round(b.w * S) + 20, writing_area_height: Math.round(b.h * S) + 20 }, ink, language: 'en', max_num_results: 5 }],
     }),
   });
   const data = await res.json();
   if (data[0] !== 'SUCCESS') throw new Error('Recognition failed');
-  return data[1]?.[0]?.[1]?.[0] || '';
+  const cands = data[1]?.[0]?.[1] || [];
+  return (cands[0] || '').replace(/\s+/g, ' ').trim();
 }
 
 // ---------- pinch to zoom (two fingers) ----------

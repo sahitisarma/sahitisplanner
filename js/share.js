@@ -5,21 +5,41 @@ import { h, sheet, toast } from './ui.js';
 import * as store from './store.js';
 import * as model from './model.js';
 import { recognize } from './ink.js';
-import { rowOfStroke } from './views/checklist.js';
+import { ROW } from './views/checklist.js';
 
 // Unchecked handwritten lines on a checklist page, as text, in order.
+function bboxOf(st) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < st.pts.length; i += 3) { const x = st.pts[i], y = st.pts[i + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
 async function inkLines(inkId) {
   const rec = store.get('ink', inkId);
   if (!rec?.strokes?.length) return [];
   const checked = rec.checked || {};
   const sub = rec.sub || {};
+  // Group strokes into lines by where most of the ink sits (not the stroke's
+  // top or bottom), so tails on g/y/p and tall letters stay on their line.
+  const yMid = (st) => { const ys = []; for (let i = 1; i < st.pts.length; i += 3) ys.push(st.pts[i]); ys.sort((a, b) => a - b); return ys[ys.length >> 1]; };
+  const rowOf = (st) => Math.max(0, Math.floor((yMid(st) - 12) / ROW));
+  const ink = rec.strokes.filter((st) => st.tool !== 'hl' && st.pts.length >= 3);
+  const big = [], small = [];
+  for (const st of ink) { const bx = bboxOf(st); (bx.w < 14 && bx.h < 14 ? small : big).push([st, bx]); }
   const rows = new Map();
-  for (const s of rec.strokes) {
-    if (s.tool === 'hl') continue;
-    const r = rowOfStroke(s);
-    if (checked[r]) continue;
-    if (!rows.has(r)) rows.set(r, []);
-    rows.get(r).push(s);
+  const put = (r, st) => { if (checked[r]) return; if (!rows.has(r)) rows.set(r, []); rows.get(r).push(st); };
+  const bigRows = big.map(([st, bx]) => [rowOf(st), bx]);
+  big.forEach(([st], i) => put(bigRows[i][0], st));
+  // Dots and crosses (i, j, t) belong to the closest word next to them, even if they sit over the line.
+  for (const [st, bx] of small) {
+    const cx = bx.x + bx.w / 2, cy = bx.y + bx.h / 2;
+    let best = rowOf(st), bestD = Infinity;
+    for (const [r, b2] of bigRows) {
+      if (cx < b2.x - 20 || cx > b2.x + b2.w + 20) continue;
+      const d = Math.abs(cy - (b2.y + b2.h / 2));
+      if (d < bestD) { bestD = d; best = r; }
+    }
+    put(best, st);
   }
   const order = [...rows.keys()].sort((a, b) => a - b);
   const texts = await Promise.all(order.map((r) => recognize(rows.get(r)).catch(() => '')));
