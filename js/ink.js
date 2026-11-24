@@ -574,14 +574,15 @@ export async function recognize(strokes) {
   // Page units are small (a word is ~30 units tall), so scale up before
   // rounding, or the letters lose their shape. Also add stroke timing: the
   // reader is much more accurate when it knows the order and speed of writing.
-  const S = Math.max(2, Math.min(12, 120 / Math.max(10, b.h)));
+  const S = Math.max(1, Math.min(6, 80 / Math.max(10, b.h)));
   let t = 0;
   const ink = ink0.map((st) => {
     const xs = [], ys = [], ts = [];
     let px = null, py = null;
     for (let i = 0; i < st.pts.length; i += 3) {
       const x = Math.round((st.pts[i] - b.x) * S), y = Math.round((st.pts[i + 1] - b.y) * S);
-      if (x === px && y === py) continue; // drop repeated points
+      // keep points about 4px apart: long lines with too many points get cut off by the reader
+      if (px !== null && Math.hypot(x - px, y - py) < 4 && i < st.pts.length - 3) continue;
       xs.push(x); ys.push(y); ts.push(t); t += 10;
       px = x; py = y;
     }

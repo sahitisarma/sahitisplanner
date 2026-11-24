@@ -94,20 +94,31 @@ export default {
       if (!env.AI) return json({ error: 'no_ai' }, 501);
       const n = Math.max(1, Math.min(60, Number(body.lines) || 1));
       if (!body.image || body.image.length > 8_000_000) return json({ error: 'bad_image' }, 400);
-      const prompt = `This image shows ${n} handwritten line${n > 1 ? 's' : ''} from a to-do or shopping list, one per white strip, top to bottom. ` +
-        `Transcribe exactly what is written on each line. Fix nothing, add nothing, keep the person's words. ` +
-        `Reply with only a JSON array of ${n} strings, one per line in order, like ["milk","call mom"].`;
+      const hints = Array.isArray(body.hints) ? body.hints.slice(0, n).map((x) => String(x).slice(0, 200)) : [];
+      const prompt = [
+        `You are reading Sahiti's handwriting from her ${body.kind || 'to-do list'}.`,
+        `The image has ${n} white strip${n > 1 ? 's' : ''}, top to bottom. Each strip is one line of handwriting.`,
+        hints.length ? `A basic handwriting reader guessed these lines (often wrong, use them only as clues): ${JSON.stringify(hints)}` : '',
+        'Read each strip carefully, letter by letter. Lists are short everyday phrases, like groceries, errands, chores, names and places.',
+        'Keep her words and spelling of names. Do not add or drop lines. If a strip is unreadable, give your best guess.',
+        `Reply with only a JSON array of exactly ${n} strings, in order.`,
+      ].filter(Boolean).join('\n');
       const messages = [{ role: 'user', content: [
         { type: 'text', text: prompt },
         { type: 'image_url', image_url: { url: `data:image/png;base64,${body.image}` } },
       ] }];
-      try {
-        const out = await env.AI.run('@cf/meta/llama-4-scout-17b-16e-instruct', { messages, max_tokens: 800, temperature: 0 });
-        const text = String(out.response ?? out.result?.response ?? '');
-        const m = text.match(/\[[\s\S]*\]/);
-        const lines = m ? JSON.parse(m[0]).map((x) => String(x).trim()) : [];
-        return json({ lines });
-      } catch (e) { return json({ error: 'ai_error', detail: String(e).slice(0, 200) }, 502); }
+      const models = ['@cf/mistralai/mistral-small-3.1-24b-instruct', '@cf/meta/llama-4-scout-17b-16e-instruct', '@cf/google/gemma-3-12b-it'];
+      for (const model of models) {
+        try {
+          const out = await env.AI.run(model, { messages, max_tokens: 1000, temperature: 0 });
+          const text = String(out.response ?? out.result?.response ?? out.choices?.[0]?.message?.content ?? '');
+          const m = text.match(/\[[\s\S]*\]/);
+          const lines = m ? JSON.parse(m[0]).map((x) => String(x).trim()) : [];
+          console.log('read', model, n, lines.length);
+          if (lines.length === n) return json({ lines, model });
+        } catch (e) { console.log('read failed', model, String(e).slice(0, 200)); }
+      }
+      return json({ error: 'ai_error' }, 502);
     }
 
     // 3) Fresh access token, any time.

@@ -15,7 +15,7 @@ function bboxOf(st) {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
-async function inkLines(inkId) {
+async function inkLines(inkId, kind) {
   const rec = store.get('ink', inkId);
   if (!rec?.strokes?.length) return [];
   const checked = rec.checked || {};
@@ -44,13 +44,16 @@ async function inkLines(inkId) {
   }
   const order = [...rows.keys()].sort((a, b) => a - b);
   // Best: the AI reader looks at a picture of the lines. Fallback: the basic reader, line by line.
-  let texts = await aiRead(order.map((r) => ({ r, strokes: rows.get(r) }))).catch(() => null);
-  if (!texts) texts = await Promise.all(order.map((r) => recognize(rows.get(r)).catch(() => '')));
+  // The basic reader's guesses go to the AI as clues.
+  const guesses = await Promise.all(order.map((r) => recognize(rows.get(r)).catch(() => '')));
+  const ai = await aiRead(order.map((r) => ({ r, strokes: rows.get(r) })), guesses, kind).catch(() => null);
+  if (!ai) toast(G.session() ? 'The AI reader didn’t answer, so this used the basic reader.' : 'Connect Google in Settings for the AI reader.');
+  const texts = ai || guesses;
   return order.map((r, i) => ({ text: texts[i].trim(), sub: !!sub[r] })).filter((l) => l.text);
 }
 
 // Draws each line on its own white strip, stacked, and asks the AI reader.
-const PAD = 18, SCALE = 1.4, X0 = 60;
+const PAD = 18, SCALE = 1.8, X0 = 60;
 function linesImage(list) {
   const stripH = Math.round((ROW + PAD * 2) * SCALE), gap = 10;
   const W = Math.round((1000 - X0) * SCALE);
@@ -77,7 +80,7 @@ function linesImage(list) {
   return c.toDataURL('image/png').split(',')[1];
 }
 
-async function aiRead(list) {
+async function aiRead(list, guesses = [], kind = 'to-do list') {
   const session = G.session();
   if (!session || !list.length) return null;
   const out = [];
@@ -85,7 +88,7 @@ async function aiRead(list) {
     const part = list.slice(i, i + 20);
     const res = await fetch(`${G.authServer()}/read`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session, image: linesImage(part), lines: part.length }),
+      body: JSON.stringify({ session, image: linesImage(part), lines: part.length, hints: guesses.slice(i, i + 20), kind }),
     });
     if (!res.ok) return null;
     const { lines } = await res.json();
@@ -104,7 +107,8 @@ export async function sendToPhone(title, groups) {
   toast('Getting your list ready…');
   const parts = [];
   for (const g of groups) {
-    const lines = [...typedLines(g.items || []), ...(await inkLines(g.inkId))];
+    const kind = /buy|grocer|store|target|trader|pharmacy/i.test(`${title} ${g.title}`) || g.inkId.startsWith('list:tobuy') ? `shopping list (${g.title})` : `${g.title} list`;
+    const lines = [...typedLines(g.items || []), ...(await inkLines(g.inkId, kind))];
     if (!lines.length) continue;
     parts.push(groups.length > 1 ? `${g.title}\n${fmt(lines)}` : fmt(lines));
   }
