@@ -1183,3 +1183,9 @@ input:focus, select:focus, textarea:focus { box-shadow: none; outline: 2px solid
 .send-text { min-height: 220px; line-height: 1.5; resize: vertical; }
 .send-actions { display: flex; justify-content: flex-end; gap: 10px; }
 .send-actions a.btn { text-decoration: none; }
+/* Finger scrolling: writing pages never trap the scroll.
+   Pages that fit their height don't scroll on their own, so a finger swipe moves the whole screen.
+   Scrolling inside a page keeps going to the screen when it reaches the end. */
+.zoom-viewport { overscroll-behavior: auto; }
+.zoom-wrap.auto .zoom-viewport:not(.zoomed) { overflow: visible; }
+.zoom-wrap.auto .zoom-viewport.zoomed { overflow-x: auto; overflow-y: visible; }

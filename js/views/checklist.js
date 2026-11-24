@@ -94,7 +94,8 @@ export function checklistPage(inkId, { height = 'auto', minRows = 12, label = 'C
   queueMicrotask(() => {
     const surf = surfRef = new InkSurface(host, {
       strokes: rec?.strokes || [],
-      logicalH: Math.max(rec?.h || 0, TOP + ROW * minRows + 10),
+      // Always leave plenty of empty lines below the last one you wrote on.
+      logicalH: Math.max(rec?.h || 0, TOP + ROW * Math.max(minRows, (Math.max(-1, ...usedRows(rec)) + 1) + 8) + 10),
       grow: true, minH: TOP + ROW * minRows + 10,
       label,
       onResize: (sf) => drawMarks(sf),

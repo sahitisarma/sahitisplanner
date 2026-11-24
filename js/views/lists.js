@@ -22,7 +22,7 @@ export function renderList(host, sec, { compact = false } = {}) {
   add(host, h('div', { class: `listview ${compact ? 'compact' : ''}`, style: { '--c': sec.color } },
     send,
     typed.length ? h('div', { class: 'typed-items' }, itemList(typed, { day: D.todayKey() })) : null,
-    checklistPage(`list:${sec.id}`, { height: compact ? 'auto' : 'auto', minRows: compact ? 8 : 16, label: `${sec.name} page` })));
+    checklistPage(`list:${sec.id}`, { height: compact ? 'auto' : 'auto', minRows: compact ? 8 : 30, label: `${sec.name} page` })));
 }
 
 // ---------- To Buy: one paper list per store ----------
@@ -49,7 +49,7 @@ export function renderToBuy(host, sec, { compact = false } = {}) {
       h('h3', {}, s.name),
       h('button', { class: 'icon-btn sm', 'aria-label': `${s.name} options`, onclick: (e) => storeMenu(e.currentTarget, s) }, icon('more'))),
     typedFor(s.id).length ? itemList(typedFor(s.id)) : null,
-    checklistPage(`list:tobuy:${s.id}`, { minRows: tab === 'all' ? 7 : 16, label: `${s.name} list` }));
+    checklistPage(`list:tobuy:${s.id}`, { minRows: tab === 'all' ? 8 : 30, label: `${s.name} list` }));
 
   const body = tab === 'all'
     ? h('div', { class: 'store-grid' }, stores.map(card))
