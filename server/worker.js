@@ -89,6 +89,27 @@ export default {
       } catch (e) { return json({ error: 'ai_error' }, 502); }
     }
 
+    // Read handwriting from a picture of your list (needs the Workers AI binding named AI).
+    if (url.pathname === '/read') {
+      if (!env.AI) return json({ error: 'no_ai' }, 501);
+      const n = Math.max(1, Math.min(60, Number(body.lines) || 1));
+      if (!body.image || body.image.length > 8_000_000) return json({ error: 'bad_image' }, 400);
+      const prompt = `This image shows ${n} handwritten line${n > 1 ? 's' : ''} from a to-do or shopping list, one per white strip, top to bottom. ` +
+        `Transcribe exactly what is written on each line. Fix nothing, add nothing, keep the person's words. ` +
+        `Reply with only a JSON array of ${n} strings, one per line in order, like ["milk","call mom"].`;
+      const messages = [{ role: 'user', content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: `data:image/png;base64,${body.image}` } },
+      ] }];
+      try {
+        const out = await env.AI.run('@cf/meta/llama-4-scout-17b-16e-instruct', { messages, max_tokens: 800, temperature: 0 });
+        const text = String(out.response ?? out.result?.response ?? '');
+        const m = text.match(/\[[\s\S]*\]/);
+        const lines = m ? JSON.parse(m[0]).map((x) => String(x).trim()) : [];
+        return json({ lines });
+      } catch (e) { return json({ error: 'ai_error', detail: String(e).slice(0, 200) }, 502); }
+    }
+
     // 3) Fresh access token, any time.
     if (url.pathname === '/token') {
       const tok = await googleToken(env, { refresh_token: rec.rt, grant_type: 'refresh_token' });

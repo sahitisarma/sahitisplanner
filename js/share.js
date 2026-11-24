@@ -5,6 +5,7 @@ import { h, sheet, toast } from './ui.js';
 import * as store from './store.js';
 import * as model from './model.js';
 import { recognize } from './ink.js';
+import * as G from './google.js';
 import { ROW } from './views/checklist.js';
 
 // Unchecked handwritten lines on a checklist page, as text, in order.
@@ -42,8 +43,56 @@ async function inkLines(inkId) {
     put(best, st);
   }
   const order = [...rows.keys()].sort((a, b) => a - b);
-  const texts = await Promise.all(order.map((r) => recognize(rows.get(r)).catch(() => '')));
+  // Best: the AI reader looks at a picture of the lines. Fallback: the basic reader, line by line.
+  let texts = await aiRead(order.map((r) => ({ r, strokes: rows.get(r) }))).catch(() => null);
+  if (!texts) texts = await Promise.all(order.map((r) => recognize(rows.get(r)).catch(() => '')));
   return order.map((r, i) => ({ text: texts[i].trim(), sub: !!sub[r] })).filter((l) => l.text);
+}
+
+// Draws each line on its own white strip, stacked, and asks the AI reader.
+const PAD = 18, SCALE = 1.4, X0 = 60;
+function linesImage(list) {
+  const stripH = Math.round((ROW + PAD * 2) * SCALE), gap = 10;
+  const W = Math.round((1000 - X0) * SCALE);
+  const c = document.createElement('canvas');
+  c.width = W; c.height = list.length * (stripH + gap);
+  const g = c.getContext('2d');
+  g.fillStyle = '#d9d9d9'; g.fillRect(0, 0, c.width, c.height);
+  g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#111';
+  list.forEach(({ r, strokes }, k) => {
+    const top = k * (stripH + gap);
+    g.fillStyle = '#fff'; g.fillRect(0, top, W, stripH);
+    const y0 = 12 + r * ROW - PAD;
+    for (const st of strokes) {
+      g.lineWidth = Math.max(2.5, (st.w || 3) * SCALE * 0.9);
+      g.beginPath();
+      for (let i = 0; i < st.pts.length; i += 3) {
+        const x = (st.pts[i] - X0) * SCALE, y = top + (st.pts[i + 1] - y0) * SCALE;
+        i ? g.lineTo(x, y) : g.moveTo(x, y);
+      }
+      if (st.pts.length === 3) g.lineTo((st.pts[0] - X0) * SCALE + 0.5, top + (st.pts[1] - y0) * SCALE);
+      g.stroke();
+    }
+  });
+  return c.toDataURL('image/png').split(',')[1];
+}
+
+async function aiRead(list) {
+  const session = G.session();
+  if (!session || !list.length) return null;
+  const out = [];
+  for (let i = 0; i < list.length; i += 20) { // 20 lines per picture keeps the text readable
+    const part = list.slice(i, i + 20);
+    const res = await fetch(`${G.authServer()}/read`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session, image: linesImage(part), lines: part.length }),
+    });
+    if (!res.ok) return null;
+    const { lines } = await res.json();
+    if (!Array.isArray(lines) || lines.length !== part.length) return null;
+    out.push(...lines);
+  }
+  return out;
 }
 
 const typedLines = (items) => items.filter((i) => !i.done).map((i) => ({ text: i.title || i.text || '', sub: !!i.parentId })).filter((l) => l.text);
